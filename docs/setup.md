@@ -23,9 +23,6 @@ $ chmod +x llvm.sh
 $ sudo ./llvm.sh 16 all
 ```
 
-## Регистрация в Yandex Contest
-// TODO
-
 ## Регистрация в системе
 
 1. Зарегистрируйтесь в системе [manytask]. Код регистрации доступен в чате курса.
@@ -59,7 +56,7 @@ $ git config --local user.name "<логин с manytask>"
 $ git config --local user.email "<email с manytask>"
 
 # Настраиваем возможность получать обновления из публичного репозитория с задачами
-$ git remote add upstream git@gitlab.manytask.org:mipt-cpp/public-<2024>-<fall|spring>.git # example public-2024-fall
+$ git remote add upstream git@gitlab.manytask.org:mipt-cpp/public/public-2025-spring.git
 ```
 
 В течении всего курса публичный репозиторий будет обновляться, в нём будут появляться новые задачи,
