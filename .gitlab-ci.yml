@@ -1,7 +1,7 @@
 variables:
   GIT_DEPTH: 10
   GIT_STRATEGY: clone
-  REGISTRY: gitlab.manytask.org:5050/mipt-cpp/public-<year>-<fall|spring> # example gitlab.manytask.org:5050/mipt-cpp/public-2024-fall
+  REGISTRY: gitlab.manytask.org:5050/mipt-cpp/public/public-2025-spring
   REVIEWERS: "shonadoto,darknessx,mesyarik"
 
 stages:
