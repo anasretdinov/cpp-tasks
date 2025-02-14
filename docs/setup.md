@@ -16,11 +16,16 @@ OSX тоже будет нормально работать.
 ```bash
 $ sudo apt-get install g++-12
 ```
-- **clang++-16**
+- **clang++-18**
 ```bash
 $ wget https://apt.llvm.org/llvm.sh
 $ chmod +x llvm.sh
-$ sudo ./llvm.sh 16 all
+$ sudo ./llvm.sh 18 all
+```
+
+При возникновении проблем с наличием библиотек (например, **libobjc**) для **clang++-18** следует выполнить
+```bash
+$ sudo apt install libclang-18-dev
 ```
 
 ## Регистрация в системе
@@ -68,10 +73,10 @@ $ git remote add upstream git@gitlab.manytask.org:mipt-cpp/public/public-2025-sp
 1. Настройте IDE. Если вы используйте Windows, то вам также надо настроить WSL:
    * CLion
       - \[Windows\] [Настройка WSL](https://www.jetbrains.com/help/clion/how-to-use-wsl-development-environment-in-clion.html)
-      - Настройку можно посмотреть в [записи семинара](https://disk.yandex.ru/i/8waWBV-L-FOKOw)
+      - Настройку можно посмотреть в [записи семинара из ШАДа](https://disk.yandex.ru/i/8waWBV-L-FOKOw)
    * VS Code
       - \[Windows\] [Настройка WSL](https://code.visualstudio.com/docs/cpp/config-wsl)
-      - Настройка описана в [инструкции](https://docs.google.com/document/d/1K0t05Bmqb3he3gW4ORQXfkVfFouS4FRT)
+      - Настройка описана в [инструкции](https://docs.google.com/document/d/1mb4oGIJcU1vkNHoW0lHV_MsiolrWoLdG)
 
 2. Решите первую задачу [multiplication](../multiplication).
 
@@ -92,7 +97,7 @@ $ git push origin main
 ```bash
 $ wget https://apt.llvm.org/llvm.sh
 $ chmod +x llvm.sh
-$ sudo ./llvm.sh 16 all
+$ sudo ./llvm.sh 18 all
 ```
 
 ```bash
