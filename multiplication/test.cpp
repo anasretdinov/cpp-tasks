@@ -7,10 +7,10 @@ TEST_CASE("Signature") {
     STATIC_CHECK(std::is_same_v<decltype(&Multiply), int64_t (*)(int, int)>);
 }
 
-TEST_CASE("Simple") { 
+TEST_CASE("Simple") {
     CHECK(Multiply(2, 3) == 6);
 }
 
-TEST_CASE("Advanced") { 
+TEST_CASE("Advanced") {
     CHECK(Multiply(999'999'993, -100'000'019) == -100'000'018'299'999'867);
 }
