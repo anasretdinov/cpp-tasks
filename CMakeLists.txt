@@ -23,5 +23,4 @@ endfunction()
 add_if_exists(private)
 
 add_if_exists(multiplication)
-add_if_exists(my_task_2)
-add_if_exists(cow_string)
+add_if_exists(stackallocator)

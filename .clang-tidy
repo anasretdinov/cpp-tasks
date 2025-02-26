@@ -41,7 +41,9 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp
     value: ^expr-type$
+  - key: readability-identifier-naming.StructIgnoredRegexp
+    value: ^(propagate_on_container_copy_assignment|rebind)$
   - key: readability-identifier-naming.FunctionIgnoredRegexp
-    value: ^(begin|end|(kdtree.*)|push_back|pop_back|size|length|capacity|front|back|find|rfind|substr|empty|shrink_to_fit|clear|data)$
+    value: ^(begin|end|cbegin|cend|rbegin|rend|crbegin|crend|(kdtree.*)|push_front|push_back|insert|pop_front|pop_back|erase|swap|size|length|capacity|front|back|find|rfind|substr|empty|shrink_to_fit|clear|data|get_allocator|allocate|deallocate|select_on_container_copy_construction)$
   - key: readability-identifier-naming.TypeAliasIgnoredRegexp
-    value: ^(is_transparent|iterator_category|value_type|difference_type|pointer|reference|iterator_type|iterator_concept)$
+    value: ^(is_transparent|iterator_category|value_type|difference_type|size_type|pointer|reference|iterator|reverse_iterator|const_iterator|const_reverse_iterator|allocator_type|allocator_traits|other)$
