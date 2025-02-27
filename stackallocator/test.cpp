@@ -1,5 +1,6 @@
 #include <sys/resource.h>
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <cstddef>
@@ -9,6 +10,7 @@
 #include <list>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #include "stackallocator.h"
 
