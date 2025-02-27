@@ -335,15 +335,15 @@ TEST_CASE("Constructors & Assignment") {
 
   SECTION("Default") {
     List<int> defaulted;
-    REQUIRE(defaulted.size() == 0);
+    REQUIRE(defaulted.empty());
     List<NotDefaultConstructible> without_default;
-    REQUIRE(without_default.size() == 0);
+    REQUIRE(without_default.empty());
   }
 
   SECTION("Copy") {
     List<NotDefaultConstructible> without_default;
     List<NotDefaultConstructible> copy = without_default;
-    REQUIRE(copy.size() == 0);
+    REQUIRE(copy.empty());
   }
 
   SECTION("Size") {
@@ -617,7 +617,7 @@ template <typename Alloc = std::allocator<int>>
 void BasicListTest(Alloc alloc = Alloc()) {
   List<int, Alloc> lst(alloc);
 
-  REQUIRE(lst.size() == 0);
+  REQUIRE(lst.empty());
 
   lst.push_back(3);
   lst.push_back(4);
@@ -766,11 +766,14 @@ size_t Accountant::dtor_calls = 0;
 template <typename Alloc = std::allocator<NotDefaultConstructible>>
 void TestNotDefaultConstructible(Alloc alloc = Alloc()) {
   List<NotDefaultConstructible, Alloc> lst(alloc);
-  REQUIRE(lst.size() == 0);
+  REQUIRE(lst.empty());
+
   lst.push_back(VerySpecialType(0));
   REQUIRE(lst.size() == 1);
+  REQUIRE(!lst.empty());
+  
   lst.pop_front();
-  REQUIRE(lst.size() == 0);
+  REQUIRE(lst.empty());
 }
 
 template <typename Alloc = std::allocator<Accountant>>
