@@ -530,7 +530,7 @@ TEST_CASE("Allocator") {
         },
         kSmallSize);
 
-    while (list.size() != 0) {
+    while (!list.empty()) {
       list.pop_back();
     }
 
@@ -771,7 +771,7 @@ void TestNotDefaultConstructible(Alloc alloc = Alloc()) {
   lst.push_back(VerySpecialType(0));
   REQUIRE(lst.size() == 1);
   REQUIRE(!lst.empty());
-  
+
   lst.pop_front();
   REQUIRE(lst.empty());
 }
