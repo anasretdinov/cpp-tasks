@@ -15,8 +15,6 @@ CheckOptions:
     value: '_'
   - key: readability-identifier-naming.StructCase
     value: CamelCase
-  - key: readability-identifier-naming.FunctionCase
-    value: CamelCase
   - key: readability-identifier-naming.VariableCase
     value: lower_case
   - key: readability-identifier-naming.PrivateMemberCase
@@ -44,6 +42,6 @@ CheckOptions:
   - key: readability-identifier-naming.StructIgnoredRegexp
     value: ^(propagate_on_container_copy_assignment|rebind)$
   - key: readability-identifier-naming.FunctionIgnoredRegexp
-    value: ^(begin|end|cbegin|cend|rbegin|rend|crbegin|crend|(kdtree.*)|push_front|emplace_front|push_back|emplace_back|insert|emplace|pop_front|pop_back|erase|swap|size|length|capacity|front|back|find|rfind|substr|empty|shrink_to_fit|clear|data|get_allocator|allocate|deallocate|select_on_container_copy_construction)$
+    value: ^(kdtree.*)$
   - key: readability-identifier-naming.TypeAliasIgnoredRegexp
     value: ^(is_transparent|iterator_category|value_type|difference_type|size_type|pointer|const_pointer|void_pointer|const_void_pointer|reference|const_reference|iterator|reverse_iterator|const_iterator|const_reverse_iterator|allocator_type|allocator_traits|other)$

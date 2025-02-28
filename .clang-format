@@ -1,6 +1,6 @@
 BasedOnStyle: Google
-IndentWidth: 2
-AccessModifierOffset: -1
+IndentWidth: 4
+AccessModifierOffset: -4
 ColumnLimit: 100
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
