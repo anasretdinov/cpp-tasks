@@ -83,9 +83,15 @@ $ git remote add upstream git@gitlab.manytask.org:mipt-cpp/public/public-2025-sp
 3. Сдайте тестовое задание в систему:
 ```bash
 # Находясь в корне репозитория
+$ git checkout main
+$ git checkout -b submit/multiplication
 $ git add multiplication/multiplication.h
 $ git commit -m "Add multiplication task"
 $ git push origin main
+```
+*Примечание:* для сдачи других заданий необходимо называть ветку задачи в соответствии с её названием. Например, для задачи `my_task` нужно изменить вторую команду следующим образом:
+```bash
+$ git checkout -b "submit/my_task"
 ```
 
 4. Пронаблюдайте за процессом тестирования на странице CI/CD -> Pipelines своего репозитория. gitlab показывает вывод консоли во время тестирования.
