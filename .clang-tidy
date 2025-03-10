@@ -3,18 +3,12 @@ Checks: '-*,cppcoreguidelines-avoid-goto, google-readability-casting, google-run
 HeaderFilterRegex: '\.h$'
 WarningsAsErrors: '*'
 CheckOptions:
-  - key: readability-identifier-naming.NamespaceCase
-    value: lower_case
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
   - key: readability-identifier-naming.TypedefCase
     value: CamelCase
-  - key: readability-identifier-naming.TypeAliasCase
-    value: CamelCase
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: '_'
-  - key: readability-identifier-naming.StructCase
-    value: CamelCase
   - key: readability-identifier-naming.VariableCase
     value: lower_case
   - key: readability-identifier-naming.PrivateMemberCase
@@ -44,4 +38,4 @@ CheckOptions:
   - key: readability-identifier-naming.FunctionIgnoredRegexp
     value: ^(kdtree.*)$
   - key: readability-identifier-naming.TypeAliasIgnoredRegexp
-    value: ^(is_transparent|iterator_category|value_type|difference_type|size_type|pointer|const_pointer|void_pointer|const_void_pointer|reference|const_reference|iterator|reverse_iterator|const_iterator|const_reverse_iterator|allocator_type|allocator_traits|other)$
+    value: ^(is_transparent)$
