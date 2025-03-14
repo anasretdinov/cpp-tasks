@@ -104,6 +104,10 @@ $ git checkout -b "submit/my_task"
 $ wget https://apt.llvm.org/llvm.sh
 $ chmod +x llvm.sh
 $ sudo ./llvm.sh 18 all
+```
+
+Дополнительные действия **только на Ubuntu**
+```bash
 $ sudo ln -s /usr/bin/clang-format-18 /usr/bin/clang-format 
 $ sudo ln -s /usr/bin/clang-tidy-18 /usr/bin/clang-tidy
 ```
