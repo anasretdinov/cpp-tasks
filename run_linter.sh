@@ -14,5 +14,5 @@ if [ ! -f compile_commands.json ]; then
     exit 1
 fi
 
-../run-clang-format.py --clang-format-executable clang-format-18 -r $TASK_PATH
-find $TASK_PATH -name *.cpp | xargs clang-tidy-18 -p . --quiet
+../run-clang-format.py --clang-format-executable clang-format -r $TASK_PATH
+find $TASK_PATH -name *.cpp | xargs clang-tidy -p . --quiet
