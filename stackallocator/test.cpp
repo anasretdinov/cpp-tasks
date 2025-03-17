@@ -19,7 +19,7 @@
 
 // template <typename T, size_t>
 // using StackAllocator = std::allocator<T>;
-
+/*
 constexpr size_t kStorageSize = 120'000'000;
 StackStorage<kStorageSize> static_storage;
 
@@ -1201,3 +1201,23 @@ TEST_CASE("Benchmark for List") {
 }
 
 }  // namespace by_mesyarik
+
+*/
+
+#include <random>
+struct dumb{
+public:
+    dumb(int x_) : x(x_) {}
+private:
+    int x;
+};
+
+void an_test_1() {
+    List<dumb> a;
+    List<dumb> b = a;
+    REQUIRE(b.size() == 0);
+}
+
+TEST_CASE("Empty test from Amir") {
+    an_test_1();
+}
