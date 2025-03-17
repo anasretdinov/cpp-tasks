@@ -1252,7 +1252,7 @@ void an_test_1() {
     T<dumb> a;
     a.push_back(dumb(228));
     a.check_link_safety();
-    T<dumb> b = a;
+    T<dumb> b = T<dumb>(a);
     a.push_back(dumb(777));
     b.push_back(dumb(229));
     a.check_link_safety();
