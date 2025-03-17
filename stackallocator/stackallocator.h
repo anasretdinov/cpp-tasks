@@ -184,7 +184,7 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 private:
     FakeNode tail;
-    BaseNode* head = &tail;
+    BaseNode* head = nullptr;
 
     size_t size_ = 0;
 
@@ -307,13 +307,13 @@ private:
 public:
     List() : List(Allocator()) {}
 
-    explicit List(const Allocator& alloc) : allocator(alloc) {}
+    explicit List(const Allocator& alloc) : allocator(alloc), head(&tail) {}
 
-    explicit List(size_t n, const Allocator& alloc = Allocator()) : allocator(alloc) {
+    explicit List(size_t n, const Allocator& alloc = Allocator()) : allocator(alloc), head(&tail) {
         build_from_equal_element(n, T());
     }
 
-    explicit List(size_t n, const T& value, const Allocator& alloc = Allocator()) : allocator(alloc) {
+    explicit List(size_t n, const T& value, const Allocator& alloc = Allocator()) : allocator(alloc), head(&tail) {
         build_from_equal_element(n, value);
     }
 private:
@@ -370,7 +370,7 @@ private:
 
 public:
     template<typename OtherAllocator>
-    List(const List<T, OtherAllocator>& other, const Allocator& alloc) : allocator(alloc) {
+    List(const List<T, OtherAllocator>& other, const Allocator& alloc) : allocator(alloc), head(&tail) {
         build_by_other_list(other);
     }
 
@@ -379,7 +379,7 @@ public:
         std::allocator_traits<Allocator>::
             select_on_container_copy_construction
                 (other.get_allocator())
-    ) {
+    ), head(&tail) {
         build_by_other_list(other);
     }
 
@@ -397,7 +397,7 @@ public:
         }
         build_by_other_list(other);
         return *this;
-    }
+    }   
 
     ~List() noexcept {
         destroy_helper();

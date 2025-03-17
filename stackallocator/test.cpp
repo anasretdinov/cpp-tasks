@@ -1212,12 +1212,42 @@ private:
     int x;
 };
 
+template<typename T>
+struct ListSubst {
+    int field;
+    T* sus = nullptr;
+    ListSubst() : field(rand()) {
+        std::cout << "Tipa construct " << field << '\n';
+    }
+    void from_other_list(const ListSubst& other) {
+        field = other.field;
+        std::cout << "Tipa construct from other" << field << '\n';
+    }
+    ListSubst(const ListSubst& other) {
+        from_other_list(other);
+    }
+    void destroy_helper() {
+        std::cerr << "Tipa destroy " << field << '\n';
+    }
+    ListSubst& operator=(const ListSubst& other) {
+        destroy_helper();
+        from_other_list(other);
+    }
+    void check_link_safety() {
+        std::cerr << field << " No links, chill\n";
+    }
+};
+
+template<template <typename> class T>
 void an_test_1() {
-    List<dumb> a;
-    List<dumb> b = a;
+    T<dumb> a;
+    a.check_link_safety();
+    T<dumb> b = a;
+    b.check_link_safety();
     REQUIRE(b.size() == 0);
 }
 
 TEST_CASE("Empty test from Amir") {
-    an_test_1();
+    an_test_1<List>();
+    // an_test_1<ListSubst>();
 }
