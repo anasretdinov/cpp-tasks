@@ -16,8 +16,6 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
-        // std::cout << (tail - mem.begin()) << " bytes taken\n";
-        // std::cout << "called get mem " << amount << ' ' << alignment << '\n';
         void* tailcast = reinterpret_cast<void*>(tail);
         // assert(amount % alignment == 0);
         size_t space = N - (tail - mem.begin());
@@ -128,7 +126,7 @@ public:
             }
 
             pointer operator -> () const {
-                return (static_cast<true_dereferencable_type>(node)); 
+                return &(static_cast<true_dereferencable_type>(node)->value); 
             }
 
             bool operator == (const base_iterator& it) const {
@@ -187,6 +185,8 @@ private:
         BaseNode * prev = nullptr, * next = nullptr;
         BaseNode() : prev(this), next(this) {}
 
+        BaseNode(const BaseNode&) = delete; // без хуйни 
+
         BaseNode(BaseNode * prev_, BaseNode * next_)
         : prev(prev_)
         , next(next_) {
@@ -208,7 +208,9 @@ public:
 
 private:
     void destroy_helper() {
-        std::cerr << "CALLED DESTROY HELPER";
+        std::cerr << "CALLED DESTROY HELPER\n";
+        std::cerr << "id by last : " << crbegin()->x << '\n';
+        std::cerr << size() << "that's the size\n";
         // Удаляет все, если все указатели правильны 
         // И спасает от копипасты 
         while (root.next != &root) {
@@ -224,16 +226,16 @@ private:
 public:
     List() : List(Allocator()) {}
 
-    explicit List(const Allocator& alloc) : allocator(alloc) {}
+    explicit List(const Allocator& alloc) : allocator(alloc), root() {}
 
-    explicit List(size_t n, const Allocator& alloc = Allocator()) : allocator(alloc) {
+    explicit List(size_t n, const Allocator& alloc = Allocator()) : allocator(alloc), root() {
         if (n == 0) {
             return;
         }
         build_from_equal_element(n, T());
     }
 
-    explicit List(size_t n, const T& value, const Allocator& alloc = Allocator()) : allocator(alloc) {
+    explicit List(size_t n, const T& value, const Allocator& alloc = Allocator()) : allocator(alloc), root() {
         build_from_equal_element(n, value);
     }
 
@@ -241,7 +243,7 @@ private:
     void build_from_equal_element(size_t n, const T& value) {
         /*
             Requirements:
-            1. *this has {head == tail} (it is empty)
+            1. *this is empty
             2. this->allocator is defined correctly at the moment            
         */
         size_ = n;
@@ -252,10 +254,6 @@ private:
         try {
             for (size_t i = 0; i < n; i++) {
                 new_element = true_alloc_traits::allocate(allocator, 1);
-                // std::cout << std::to_string(allocator) << '\n';
-                // std::cout << std::to_string(new_element) << '\n';
-                // std::cout << std::to_string(root.prev) << '\n';
-                // std::cout << std::to_string(root) << '\n';
                 true_alloc_traits::construct(allocator, new_element, root.prev, &root, value); /// TODO: move semantics for T() ? 
             }
         } catch (...) { 
@@ -275,7 +273,7 @@ private:
         */
         size_ = other.size_;
         
-        const typename List<T, OtherAllocator>::iterator it = other.begin();
+        typename List<T, OtherAllocator>::const_iterator it = other.begin();
         ListNode * new_element = nullptr;
         try {
             while (it != other.end()) {
@@ -291,16 +289,27 @@ private:
 
 public:
     template<typename OtherAllocator>
-    List(const List<T, OtherAllocator>& other, const Allocator& alloc) : allocator(alloc) {
+    List(const List<T, OtherAllocator>& other, const Allocator& alloc) : allocator(alloc), root() {
         build_by_other_list(other);
     }
 
     template<typename OtherAllocator>
-    List(const List<T, OtherAllocator>& other) : allocator(
+    List(const List<T, OtherAllocator>& other) 
+    : allocator(
+        std::allocator_traits<OtherAllocator>::
+            select_on_container_copy_construction
+                (other.get_allocator()))
+    , root() {
+        build_by_other_list(other);
+    }
+
+    List(const List& other) 
+    : allocator(
         std::allocator_traits<Allocator>::
             select_on_container_copy_construction
-                (other.get_allocator())) {
-        build_by_other_list(other);
+                (other.get_allocator()))
+    , root() {
+        build_by_other_list(other); 
     }
 
     template<typename OtherAllocator>
@@ -324,16 +333,19 @@ public:
     }
     
     void check_link_safety() const {
+        std::cerr << "Check called\n";
         const BaseNode* now = root.next;
         while (now != &root) {
+            std::cerr << now << ' ' << &root << '\n';
             if (now == (now->next->prev)) {
-                std::cout << "OK!\n";
+                std::cerr << "OK!\n";
             } else {
+                std::cerr << " there are we!\n";
                 throw std::runtime_error("check failed :(");
             }
             now = now->next;
         }
-        std::cout << " Check completed!\n";
+        std::cerr << " Check completed!\n";
     }
     
     iterator begin() {
