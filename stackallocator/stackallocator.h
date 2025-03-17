@@ -167,7 +167,7 @@ public:
                 return value;
             }
         private:
-            using true_type = std::conditional_t<is_const, const BaseNode*, BaseNode*>;
+            using true_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
             true_type node;
 
             true_type get_node() const {
