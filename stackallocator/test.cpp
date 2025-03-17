@@ -1215,15 +1215,16 @@ private:
 template<typename T>
 struct ListSubst {
     int field;
+    int* field_ptr = nullptr;
     T* sus = nullptr;
-    ListSubst() : field(rand()) {
+    ListSubst() : field(rand()), field_ptr(&field) {
         std::cout << "Tipa construct " << field << '\n';
     }
     void from_other_list(const ListSubst& other) {
         field = other.field;
         std::cout << "Tipa construct from other" << field << '\n';
     }
-    ListSubst(const ListSubst& other) {
+    ListSubst(const ListSubst& other) : field_ptr(&field) {
         from_other_list(other);
     }
     void destroy_helper() {
@@ -1236,13 +1237,25 @@ struct ListSubst {
     void check_link_safety() {
         std::cerr << field << " No links, chill\n";
     }
+
+    void push_back(const T&) {
+        std::cout << "pohuy na push back\n";
+    }
+
+    size_t size() const {
+        return 0;
+    }
 };
 
 template<template <typename> class T>
 void an_test_1() {
     T<dumb> a;
+    a.push_back(dumb(228));
     a.check_link_safety();
     T<dumb> b = a;
+    a.push_back(dumb(777));
+    b.push_back(dumb(229));
+    a.check_link_safety();
     b.check_link_safety();
     REQUIRE(b.size() == 0);
 }

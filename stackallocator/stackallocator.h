@@ -118,8 +118,8 @@ public:
             using iterator_category = std::bidirectional_iterator_tag;
             using value_type = T;
             using difference_type = std::ptrdiff_t;
-            using pointer = typename std::conditional<is_const, const T*, T*>::type;
-            using reference = typename std::conditional<is_const, const T&, T&>::type;
+            using pointer = typename std::conditional_t<is_const, const T*, T*>;
+            using reference = typename std::conditional_t<is_const, const T&, T&>;
     
             base_iterator(const base_iterator<false> &val) : node(val.get_node()) {}
 
@@ -167,7 +167,7 @@ public:
                 return value;
             }
         private:
-            using true_type = std::conditional<is_const, const BaseNode*, BaseNode*>::type;
+            using true_type = std::conditional_t<is_const, const BaseNode*, BaseNode*>;
             true_type node;
 
             true_type get_node() const {
