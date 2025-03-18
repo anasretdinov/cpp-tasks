@@ -16,6 +16,7 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
+        // std::cout << " get mem called \n";
         size_t space = N - (tail - mem.begin());
 
         void* tail_casted = static_cast<void*>(tail);
@@ -23,8 +24,12 @@ public:
         if (res == nullptr) {
             throw std::bad_alloc();
         }
+        // std::cout << space - amount << " space left \n";
         tail = static_cast<std::byte*>(res);
-        return (tail += amount);
+
+        std::byte* to_return = tail;
+        tail += amount;
+        return to_return;
     }
 private:
     std::array<std::byte, N> mem;
