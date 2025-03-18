@@ -62,7 +62,8 @@ public:
 
     void deallocate(T*, size_t) {} // Dumb version does nothing
 
-    bool operator == (const StackAllocator& alloc) const {
+    template <typename OtherT, size_t OtherN>
+    bool operator == (const StackAllocator<OtherT, OtherN>& alloc) const {
         return (storage == alloc.storage);
     }
 
@@ -199,7 +200,8 @@ private:
     struct ListNode : BaseNode {
         T value;
 
-        ListNode(BaseNode * prev_, BaseNode * next_, const T& val) : BaseNode(), value(val) {
+        template <typename... Args>
+        ListNode(BaseNode * prev_, BaseNode * next_, Args... args) : BaseNode(), value(args...) {
             BaseNode::link_between(prev_, next_);
         }
     };
@@ -235,7 +237,7 @@ public:
         if (n == 0) {
             return;
         }
-        build_from_equal_element(n, T());
+        build_from_equal_element(n);
     }
 
     explicit List(size_t n, const T& value, const Allocator& alloc = Allocator()) : allocator(alloc), root() {
@@ -243,7 +245,8 @@ public:
     }
 
 private:
-    void build_from_equal_element(size_t n, const T& value) {
+    template <typename... Args>
+    void build_from_equal_element(size_t n, Args... args) {
         /*
             Requirements:
             1. *this is empty
@@ -257,7 +260,7 @@ private:
         try {
             for (size_t i = 0; i < n; i++) {
                 new_element = true_alloc_traits::allocate(allocator, 1);
-                true_alloc_traits::construct(allocator, new_element, root.prev, &root, value); /// TODO: move semantics for T() ? 
+                true_alloc_traits::construct(allocator, new_element, root.prev, &root, args...); /// TODO: move semantics for T() ? 
             }
         } catch (...) { 
             // полагаю что исключение в T(), т.к. остальные noexcept 
@@ -265,10 +268,9 @@ private:
             destroy_helper();
             throw;
         }
-    };
+    }
 
-    template<typename OtherAllocator>
-    void build_by_other_list(const List<T, OtherAllocator>& other) {
+    void build_by_other_list(const List& other) {
         /*
             Requirements:
             1. *this is empty
@@ -276,7 +278,7 @@ private:
         */
         size_ = other.size_;
         // std::cerr << " called build by other\n";
-        typename List<T, OtherAllocator>::const_iterator it = other.begin();
+        const_iterator it = other.begin();
         ListNode * new_element = nullptr;
         try {
             while (it != other.end()) {
@@ -291,54 +293,77 @@ private:
         }
     }
 
-public:
-    template<typename OtherAllocator>
-    List(const List<T, OtherAllocator>& other, const Allocator& alloc) : allocator(alloc), root() {
-        build_by_other_list(other);
-    }
+    void wise_assignment(const List& other) {
+        std::cout << "Wise assignment called\n";
+        while (size() > other.size()) {
+            pop_back();
+        }
 
-    template<typename OtherAllocator>
-    List(const List<T, OtherAllocator>& other) 
-    : allocator(
-        std::allocator_traits<OtherAllocator>::
-            select_on_container_copy_construction
-                (other.get_allocator()))
-    , root() {
-        build_by_other_list(other);
+        iterator it = begin();
+        const_iterator other_it = other.cbegin();
+
+        while (it != end()) {
+            *it = *other_it;
+            ++it;
+            ++other_it;
+        }
+
+        while (other_it != other.cend()) {
+            push_back(*other_it);
+            other_it++;
+        }
     }
+public:
+    List(const List& other, const Allocator& alloc) : allocator(alloc), root() {
+        build_by_other_list(other);
+    } 
 
     List(const List& other) 
     : allocator(
-        std::allocator_traits<Allocator>::
+        alloc_traits::
             select_on_container_copy_construction
                 (other.get_allocator()))
     , root() {
-        // std::cerr << "Hopa!\n";
-        build_by_other_list(other); 
+        build_by_other_list(other);
     }
 
-    template<typename OtherAllocator>
-    List& operator=(const List<T, OtherAllocator>& other) {
-        destroy_helper();
-        /* TODO : необязательная оптимизация - переиспользование памяти в 
-         случае, если аллокатор равен */
-        if constexpr (
-            std::allocator_traits<typename List<T, OtherAllocator>::allocator_type>::
-            propagate_on_container_copy_assignment::
-            value
-        ) {
-            allocator = other.get_allocator();
-        }
-        build_by_other_list(other);
-        return *this;
-    }
+
+    // template<typename OtherAllocator>
+    // List& operator=(const List<T, OtherAllocator>& other) {
+    //     destroy_helper();
+    //     /* TODO : необязательная оптимизация - переиспользование памяти в 
+    //      случае, если аллокатор равен */
+    //     if constexpr (
+    //         std::allocator_traits<typename List<T, OtherAllocator>::allocator_type>::
+    //         propagate_on_container_copy_assignment::
+    //         value
+    //     ) {
+    //         allocator = other.get_allocator();
+    //     }
+    //     build_by_other_list(other);
+    //     return *this;
+    // }
 
     List& operator=(const List& other) {
+        std::cout << "SUKA YA ZAEBALSYA\n";
         if (this == &other) {
             return *this;
         }
-        destroy_helper();
-        build_by_other_list(other);
+
+        if (allocator == other.allocator) {
+            // реюзаем 
+            wise_assignment(other);
+        } else {
+            destroy_helper();
+            if constexpr (
+                alloc_traits::
+                propagate_on_container_copy_assignment::
+                value
+            ) {
+                allocator = other.get_allocator();
+            }
+            build_by_other_list(other);
+        }
         return *this;
     }
 
