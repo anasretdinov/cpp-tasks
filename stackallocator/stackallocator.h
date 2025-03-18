@@ -16,16 +16,16 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
-        std::cout << " get mem called \n";
+        // std::cout << " get mem called \n";
         size_t space = N - (tail - mem.begin());
 
         void* tail_casted = static_cast<void*>(tail);
         void* res = std::align(alignment, amount, tail_casted, space);
         if (res == nullptr) {
-            std::cout << "Bum.\n";
+            // std::cout << "Bum.\n";
             throw std::bad_alloc();
         }
-        std::cout << space - amount << " space left \n";
+        // std::cout << space - amount << " space left \n";
         tail = static_cast<std::byte*>(res);
 
         std::byte* to_return = tail;
@@ -46,23 +46,23 @@ public:
     template <typename U, size_t M>
     friend class StackAllocator;
 
-    StackAllocator(StackStorage<N>& ss) noexcept : storage(&ss) {};
+    StackAllocator(StackStorage<N>& ss) : storage(&ss) {};
 
     template<typename U>
-    StackAllocator(const StackAllocator<U, N>& alloc) noexcept : storage(alloc.storage) {
+    StackAllocator(const StackAllocator<U, N>& alloc) : storage(alloc.storage) {
         // std::cout << " Constructed allocator of " << typeid(T).name() << '\n';
     }
 
-    StackAllocator& operator = (const StackAllocator& alloc) noexcept = default;
+    StackAllocator& operator = (const StackAllocator& alloc) = default;
     
-    T* allocate(size_t n) noexcept {
+    T* allocate(size_t n) {
         void* raw_memory = storage -> get_memory(n * sizeof(T), alignof(T));
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) noexcept {} // Dumb version does nothing
+    void deallocate(T*, size_t) {} // Dumb version does nothing
 
-    bool operator == (const StackAllocator& alloc) const noexcept {
+    bool operator == (const StackAllocator& alloc) const {
         return (storage == alloc.storage);
     }
 
@@ -451,11 +451,11 @@ public:
     }
     
     iterator insert(const_iterator pos, const T& value) {
-        std::cout << " hohoho\n";
+        // std::cout << " hohoho\n";
         BaseNode * after_new = const_cast<BaseNode*>(pos.node);
         BaseNode * before_new = after_new->prev;
         ListNode * new_element = true_alloc_traits::allocate(allocator, 1);
-        std::cout << "hihihi\n";
+        // std::cout << "hihihi\n";
         try {
             true_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
         } catch (...) {
