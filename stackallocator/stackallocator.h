@@ -201,7 +201,7 @@ private:
         T value;
 
         template <typename... Args>
-        ListNode(BaseNode * prev_, BaseNode * next_, Args... args) : BaseNode(), value(args...) {
+        ListNode(BaseNode * prev_, BaseNode * next_, const Args&... args) : BaseNode(), value(args...) {
             BaseNode::link_between(prev_, next_);
         }
     };
@@ -246,7 +246,7 @@ public:
 
 private:
     template <typename... Args>
-    void build_from_equal_element(size_t n, Args... args) {
+    void build_from_equal_element(size_t n, const Args&... args) {
         /*
             Requirements:
             1. *this is empty
@@ -280,8 +280,9 @@ private:
         // std::cerr << " called build by other\n";
         const_iterator it = other.cbegin();
         try {
+            // std::cout << " start pominki\n";
             while (it != other.cend()) {
-                std::cout << (*it).getCtor() << " ctor nowww\n";
+                // std::cout << " other roll\n";
                 push_back(*it);
                 ++it;
             }
@@ -292,7 +293,7 @@ private:
     }
 
     void wise_assignment(const List& other) {
-        std::cout << "Wise assignment called\n";
+        // std::cout << "Wise assignment called\n";
         while (size() > other.size()) {
             pop_back();
         }
@@ -322,7 +323,7 @@ public:
             select_on_container_copy_construction
                 (other.get_allocator()))
     , root() {
-        std::cout << " this constructor\n";
+        // std::cout << " this constructor\n";
         build_by_other_list(other);
     }
 
@@ -344,7 +345,7 @@ public:
     // }
 
     List& operator=(const List& other) {
-        std::cout << "SUKA YA ZAEBALSYA\n";
+        // std::cout << "SUKA YA ZAEBALSYA\n";
         if (this == &other) {
             return *this;
         }
@@ -438,6 +439,7 @@ public:
     }
 
     void push_back(const T& val) {
+        // std::cout << " there are we\n";
         insert(cend(), val);
     };
 
@@ -488,6 +490,7 @@ public:
         }
 
         size_++;
+        // std::cout << "hehehe\n";
         return iterator(new_element);
     }
 };
