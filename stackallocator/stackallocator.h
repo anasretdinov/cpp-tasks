@@ -16,36 +16,20 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
-        // std::cout << "Calling memory " << amount << ' ' << alignment << '\n';
-        void* tailcast = reinterpret_cast<void*>(tail);
-        // assert(amount % alignment == 0);
         size_t space = N - (tail - mem.begin());
-        // std::cout << space << " left?\n";
-        std::byte* allocated_start = reinterpret_cast<std::byte*>(custom_align(alignment, amount, tailcast, space));
-        if (!allocated_start) {
+
+        void* tail_casted = static_cast<void*>(tail);
+        void* res = std::align(alignment, amount, tail_casted, space);
+        if (res == nullptr) {
             throw std::bad_alloc();
         }
-        tail = allocated_start + amount;
-        return allocated_start;
+        tail = static_cast<std::byte*>(res);
+        return (tail += amount);
     }
 private:
     std::array<std::byte, N> mem;
     std::byte* tail = mem.begin();
 
-    void* custom_align(size_t alignment, size_t size, void*& ptr, size_t& space) {
-        // std::align results in UB if alignment is not a power of 2. 
-        // Since it is not true in most cases, i use custom alignment. 
-        uintptr_t address = reinterpret_cast<uintptr_t>(ptr);
-
-
-        size_t shift = (address % alignment == 0 ? 0 : alignment - (address % alignment));
-        
-        if (space < shift + size) return nullptr;
-        
-        ptr = reinterpret_cast<void*>(address + shift);
-        space -= shift;
-        return ptr;
-    }
 };
 
 template <typename T, size_t N>
