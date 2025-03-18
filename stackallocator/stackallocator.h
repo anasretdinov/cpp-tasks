@@ -1,3 +1,4 @@
+
 #include <memory>
 #include <stdexcept>
 #include <algorithm>
@@ -16,23 +17,25 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
-        size_t space = N - (tail - mem.begin());
+        // std::cout << " get mem called " << amount << ' ' << alignment << '\n';
+        void* tail_casted = reinterpret_cast<void*>(mem.begin() + first_free);
+        std::byte* first_free_align = 
+            reinterpret_cast<std::byte*>(std::align(alignment, amount, tail_casted, space_left));
 
-        void* tail_casted = static_cast<void*>(tail);
-        void* res = std::align(alignment, amount, tail_casted, space);
-        if (res == nullptr) {
+        if (first_free_align == nullptr) {
             throw std::bad_alloc();
         }
-        tail = static_cast<std::byte*>(res);
 
-        std::byte* to_return = tail;
-        tail += amount;
-        return to_return;
+        space_left -= amount;
+        first_free = (N - space_left);
+        // std::cout << space_left << " left\n";
+        return first_free_align;
     }
 private:
     std::array<std::byte, N> mem;
-    std::byte* tail = mem.begin();
 
+    size_t first_free = 0;
+    size_t space_left = N;
 };
 
 template <typename T, size_t N>
@@ -43,27 +46,26 @@ public:
     template <typename U, size_t M>
     friend class StackAllocator;
 
-    StackAllocator(StackStorage<N>& ss) : storage(&ss) {};
+    StackAllocator(StackStorage<N>& ss) noexcept : storage(&ss) {};
 
     template<typename U>
-    StackAllocator(const StackAllocator<U, N>& alloc) : storage(alloc.storage) {
+    StackAllocator(const StackAllocator<U, N>& alloc) noexcept : storage(alloc.storage) {
         // std::cout << " Constructed allocator of " << typeid(T).name() << '\n';
     }
 
-    StackAllocator& operator = (const StackAllocator& alloc) = default;
+    StackAllocator& operator = (const StackAllocator& alloc) noexcept = default;
     
     T* allocate(size_t n) {
         void* raw_memory = storage -> get_memory(n * sizeof(T), alignof(T));
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) {} // Dumb version does nothing
+    void deallocate(T*, size_t) noexcept {} // Dumb version does nothing
 
     template <typename OtherT, size_t OtherN>
-    bool operator == (const StackAllocator<OtherT, OtherN>& alloc) const {
+    bool operator == (const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
         return (storage == alloc.storage);
     }
-
 
 
     template<typename U>
