@@ -23,7 +23,7 @@ public:
         std::cout << space << " left?\n";
         std::byte* allocated_start = reinterpret_cast<std::byte*>(custom_align(alignment, amount, tailcast, space));
         if (!allocated_start) {
-            throw std::runtime_error("Bazinga");
+            throw std::bad_alloc();
         }
         tail = allocated_start + amount;
         return allocated_start;
