@@ -9,6 +9,7 @@
 template <size_t N>
 class StackStorage {
 public:
+    using mem_type = unsigned char;
 
     StackStorage() {}
 
@@ -16,23 +17,22 @@ public:
 
     StackStorage(const StackStorage&) = delete;
 
-    std::byte* get_memory(size_t amount , size_t alignment) {
-        // std::cout << " get mem called " << amount << ' ' << alignment << '\n';
-        void* tail_casted = reinterpret_cast<void*>(mem.begin() + first_free);
-        std::byte* first_free_align = 
-            reinterpret_cast<std::byte*>(std::align(alignment, amount, tail_casted, space_left));
-
+    mem_type* get_memory(size_t amount , size_t alignment) {
+        void* tail_casted = reinterpret_cast<void*>(mem + first_free);
+        mem_type* first_free_align = 
+            reinterpret_cast<mem_type*>(std::align(alignment, amount, tail_casted, space_left));
+        
         if (first_free_align == nullptr) {
             throw std::bad_alloc();
         }
 
         space_left -= amount;
         first_free = (N - space_left);
-        // std::cout << space_left << " left\n";
         return first_free_align;
     }
 private:
-    std::array<std::byte, N> mem;
+
+    mem_type mem[N];
 
     size_t first_free = 0;
     size_t space_left = N;
@@ -49,9 +49,7 @@ public:
     StackAllocator(StackStorage<N>& ss) noexcept : storage(&ss) {};
 
     template<typename U>
-    StackAllocator(const StackAllocator<U, N>& alloc) noexcept : storage(alloc.storage) {
-        // std::cout << " Constructed allocator of " << typeid(T).name() << '\n';
-    }
+    StackAllocator(const StackAllocator<U, N>& alloc) noexcept : storage(alloc.storage) {}
 
     StackAllocator& operator = (const StackAllocator& alloc) noexcept = default;
     
@@ -212,9 +210,6 @@ public:
 
 private:
     void destroy_helper() {
-        // std::cerr << "CALLED DESTROY HELPER\n";
-        // std::cerr << "id by last : " << crbegin()->x << '\n';
-        // std::cerr << size() << "that's the size\n";
         // Удаляет все, если все указатели правильны 
         // И спасает от копипасты 
         while (root.next != &root) {
@@ -276,12 +271,9 @@ private:
             2. this->allocator is defined correctly at the moment
         */
         size_ = 0;
-        // std::cerr << " called build by other\n";
         const_iterator it = other.cbegin();
         try {
-            // std::cout << " start pominki\n";
             while (it != other.cend()) {
-                // std::cout << " other roll\n";
                 push_back(*it);
                 ++it;
             }
@@ -292,7 +284,6 @@ private:
     }
 
     void wise_assignment(const List& other) {
-        // std::cout << "Wise assignment called\n";
         while (size() > other.size()) {
             pop_back();
         }
@@ -322,29 +313,10 @@ public:
             select_on_container_copy_construction
                 (other.get_allocator()))
     , root() {
-        // std::cout << " this constructor\n";
         build_by_other_list(other);
     }
 
-
-    // template<typename OtherAllocator>
-    // List& operator=(const List<T, OtherAllocator>& other) {
-    //     destroy_helper();
-    //     /* TODO : необязательная оптимизация - переиспользование памяти в 
-    //      случае, если аллокатор равен */
-    //     if constexpr (
-    //         std::allocator_traits<typename List<T, OtherAllocator>::allocator_type>::
-    //         propagate_on_container_copy_assignment::
-    //         value
-    //     ) {
-    //         allocator = other.get_allocator();
-    //     }
-    //     build_by_other_list(other);
-    //     return *this;
-    // }
-
     List& operator=(const List& other) {
-        // std::cout << "SUKA YA ZAEBALSYA\n";
         if (this == &other) {
             return *this;
         }
@@ -438,7 +410,6 @@ public:
     }
 
     void push_back(const T& val) {
-        // std::cout << " there are we\n";
         insert(cend(), val);
     };
 
@@ -476,11 +447,9 @@ public:
     }
     
     iterator insert(const_iterator pos, const T& value) {
-        // std::cout << " hohoho\n";
         BaseNode * after_new = const_cast<BaseNode*>(pos.node);
         BaseNode * before_new = after_new->prev;
         ListNode * new_element = true_alloc_traits::allocate(allocator, 1);
-        // std::cout << "hihihi\n";
         try {
             true_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
         } catch (...) {
@@ -489,7 +458,6 @@ public:
         }
 
         size_++;
-        // std::cout << "hehehe\n";
         return iterator(new_element);
     }
 };
