@@ -14,8 +14,6 @@
 
 #include "stackallocator.h"
 
-
-
 // template <typename T, typename Alloc = std::allocator<T>>
 // using List = std::list<T, Alloc>;
 
@@ -562,7 +560,7 @@ TEST_CASE("Allocator") {
         using DataT = size_t;
         constexpr size_t kBytesCount = kSmallSize * (sizeof(DataT) + sizeof(void*) + sizeof(void*));
         using Alloc = StackAllocator<DataT, kBytesCount>;
-    
+
         auto small_storage = StackStorage<kBytesCount>();
         auto small_list = List<DataT, Alloc>(Alloc(small_storage));
         for (size_t i = 0; i < kSmallSize; ++i) {
@@ -1203,106 +1201,3 @@ TEST_CASE("Benchmark for List") {
 }
 
 }  // namespace by_mesyarik
-
-
-
-
-
-#include <random>
-struct dumb{
-public:
-    dumb(int x_) : x(x_) {}
-    int x;
-};
-
-template<typename T>
-struct ListSubst {
-    int field;
-    int* field_ptr = nullptr;
-    T* sus = nullptr;
-    ListSubst() : field(rand()), field_ptr(&field) {
-        std::cout << "Tipa construct " << field << '\n';
-    }
-    void from_other_list(const ListSubst& other) {
-        field = other.field;
-        std::cout << "Tipa construct from other" << field << '\n';
-    }
-    ListSubst(const ListSubst& other) : field_ptr(&field) {
-        from_other_list(other);
-    }
-    void destroy_helper() {
-        std::cerr << "Tipa destroy " << field << '\n';
-    }
-    ListSubst& operator=(const ListSubst& other) {
-        destroy_helper();
-        from_other_list(other);
-    }
-    void check_link_safety() {
-        std::cerr << field << " No links, chill\n";
-    }
-
-    void push_back(const T&) {
-        std::cout << "pohuy na push back\n";
-    }
-
-    size_t size() const {
-        return 0;
-    }
-};
-
-template<template <typename> class T>
-void an_test_1() {
-    T<dumb> a;
-    a.push_back(dumb(0));
-    a.check_link_safety();
-    T<dumb> b = T<dumb>(a);
-    b.check_link_safety();
-    
-    a.push_back(dumb(1));
-    b.push_back(dumb(2));
-    a.check_link_safety();
-    std::cerr << " a is not used then\n";
-    b.check_link_safety();
-    REQUIRE(b.size() == 2);
-}
-
-TEST_CASE("Empty test from Amir") {
-    an_test_1<List>();
-    // an_test_1<ListSubst>();
-}
-
-constexpr int low_k = 10;
-constexpr size_t node_size = sizeof(size_t) + sizeof(void*) + sizeof(void*);
-
-struct exact_56{
-    size_t a,b,c,d,e,f,g;
-};
-
-void progrev_allocator() {
-    REQUIRE(sizeof(exact_56) == 56);
-    StackStorage<56> rr;
-    std::cout << &rr << " ss adress\n";
-    StackAllocator<exact_56, 56> sa(rr);
-    std::cout << sa.allocate(1) << '\n';
-}
-
-TEST_CASE("Memory test from Amir") {
-    SECTION("Allocator progrev") {
-        progrev_allocator();
-    }
-
-    SECTION("228") {
-
-
-        StackStorage<low_k * node_size> little_storage;
-
-        StackAllocator<size_t, low_k * node_size> alloc(little_storage);
-
-        List<size_t, StackAllocator<size_t, low_k * node_size>> list1(alloc);
-
-        for (size_t i = 0; i < low_k; i++) {
-            std::cout << i << "-th step \n";
-            list1.push_back(i); 
-        }
-    }
-}
