@@ -276,18 +276,16 @@ private:
             1. *this is empty
             2. this->allocator is defined correctly at the moment
         */
-        size_ = other.size_;
+        size_ = 0;
         // std::cerr << " called build by other\n";
-        const_iterator it = other.begin();
-        ListNode * new_element = nullptr;
+        const_iterator it = other.cbegin();
         try {
-            while (it != other.end()) {
-                new_element = true_alloc_traits::allocate(allocator, 1);
-                true_alloc_traits::construct(allocator, new_element, root.prev, &root, *it);
+            while (it != other.cend()) {
+                std::cout << (*it).getCtor() << " ctor nowww\n";
+                push_back(*it);
                 ++it;
             }
         } catch(...) {
-            true_alloc_traits::deallocate(allocator, new_element, 1);
             destroy_helper();
             throw;
         }
@@ -324,6 +322,7 @@ public:
             select_on_container_copy_construction
                 (other.get_allocator()))
     , root() {
+        std::cout << " this constructor\n";
         build_by_other_list(other);
     }
 
