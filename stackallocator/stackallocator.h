@@ -16,11 +16,11 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
-        std::cout << "Calling memory " << amount << ' ' << alignment << '\n';
+        // std::cout << "Calling memory " << amount << ' ' << alignment << '\n';
         void* tailcast = reinterpret_cast<void*>(tail);
         // assert(amount % alignment == 0);
         size_t space = N - (tail - mem.begin());
-        std::cout << space << " left?\n";
+        // std::cout << space << " left?\n";
         std::byte* allocated_start = reinterpret_cast<std::byte*>(custom_align(alignment, amount, tailcast, space));
         if (!allocated_start) {
             throw std::bad_alloc();
@@ -344,6 +344,9 @@ public:
     }
 
     List& operator=(const List& other) {
+        if (this == &other) {
+            return *this;
+        }
         destroy_helper();
         build_by_other_list(other);
         return *this;
