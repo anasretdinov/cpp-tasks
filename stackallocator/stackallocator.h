@@ -19,45 +19,47 @@ public:
 
     mem_type* get_memory(size_t amount, size_t alignment) {
         /*
-        void* tail_casted = reinterpret_cast<void*>(mem + first_free);
+        void* tail_casted = reinterpret_cast<void*>(mem_ + first_free_);
         mem_type* first_free_align =
-            reinterpret_cast<mem_type*>(std::align(alignment, amount, tail_casted, space_left));
+            reinterpret_cast<mem_type*>(std::align(alignment, amount, tail_casted, space_left_));
 
         if (first_free_align == nullptr) {
             throw std::bad_alloc();
         }
 
-        space_left -= amount;
-        first_free = (N - space_left);
+        space_left_ -= amount;
+        first_free_ = (N - space_left_);
         return first_free_align;
         */
 
-        mem_type* first_free_align = custom_align(alignment, amount, mem + first_free, space_left);
+        mem_type* first_free_align = 
+            custom_align(alignment, amount, mem_ + first_free_, space_left_);
 
         if (first_free_align == nullptr) {
             throw std::bad_alloc();
         }
 
-        space_left -= amount;
-        first_free = N - space_left;
+        space_left_ -= amount;
+        first_free_ = N - space_left_;
         return first_free_align;
     }
 
 private:
-    mem_type mem[N];
+    mem_type mem_[N];
 
-    size_t first_free = 0;
-    size_t space_left = N;
+    size_t first_free_ = 0;
+    size_t space_left_ = N;
 
-    mem_type* custom_align(size_t alignment, size_t size, mem_type* ptr, size_t space_left) {
+    mem_type* custom_align(size_t alignment, size_t size, mem_type* ptr, size_t space) {
         std::uintptr_t numerical = reinterpret_cast<std::uintptr_t>(ptr);
 
         size_t shift = (alignment - (numerical % alignment)) % alignment;
 
-        if (space_left < size + shift)
+        if (space < size + shift) {
             return nullptr;
+        }
         ptr += shift;
-        space_left -= shift;
+        space -= shift;
         return ptr;
     }
 };
@@ -71,17 +73,17 @@ public:
     friend class StackAllocator;
 
     StackAllocator(StackStorage<N>& ss) noexcept
-        : storage(&ss) {};
+        : storage_(&ss) {};
 
     template <typename U>
     StackAllocator(const StackAllocator<U, N>& alloc) noexcept
-        : storage(alloc.storage) {
+        : storage_(alloc.storage_) {
     }
 
-    StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
+    // StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
 
     T* allocate(size_t n) {
-        void* raw_memory = storage->get_memory(n * sizeof(T), alignof(T));
+        void* raw_memory = storage_->get_memory(n * sizeof(T), alignof(T));
         return reinterpret_cast<T*>(raw_memory);
     }
 
@@ -90,7 +92,7 @@ public:
 
     template <typename OtherT, size_t OtherN>
     bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
-        return (storage == alloc.storage);
+        return (storage_ == alloc.storage_);
     }
 
     template <typename U>
@@ -99,7 +101,7 @@ public:
     };
 
 private:
-    StackStorage<N>* storage = nullptr;
+    StackStorage<N>* storage_ = nullptr;
 };
 
 template <typename T, typename Allocator = std::allocator<T>>
@@ -124,7 +126,7 @@ public:
     true_alloc_type allocator;
 
     template <bool is_const>
-    class base_iterator {
+    class BaseIterator {
     public:
         friend class List;
         using iterator_category = std::bidirectional_iterator_tag;
@@ -133,52 +135,52 @@ public:
         using pointer = typename std::conditional_t<is_const, const T*, T*>;
         using reference = typename std::conditional_t<is_const, const T&, T&>;
 
-        base_iterator(const base_iterator<false>& val)
-            : node(val.node) {
+        BaseIterator(const BaseIterator<false>& val)
+            : node_(val.node_) {
         }
 
-        base_iterator& operator=(const base_iterator&) = default;
+        // BaseIterator& operator=(const BaseIterator&) = default;
 
         reference operator*() const {
-            return static_cast<true_dereferencable_type>(node)->value;
+            return static_cast<true_dereferencable_type>(node_)->value;
         }
 
         pointer operator->() const {
-            return &(static_cast<true_dereferencable_type>(node)->value);
+            return &(static_cast<true_dereferencable_type>(node_)->value);
         }
 
-        bool operator==(const base_iterator& it) const {
-            return (node == it.node);
+        bool operator==(const BaseIterator& it) const {
+            return (node_ == it.node_);
         }
 
-        base_iterator& operator++() {
-            node = node->next;
+        BaseIterator& operator++() {
+            node_ = node_->next;
             return *this;
         }
 
-        base_iterator operator++(int) {
-            base_iterator copy = *this;
-            node = node->next;
+        BaseIterator operator++(int) {
+            BaseIterator copy = *this;
+            node_ = node_->next;
             return copy;
         }
 
-        base_iterator& operator--() {
-            node = node->prev;
+        BaseIterator& operator--() {
+            node_ = node_->prev;
             return *this;
         };
 
-        base_iterator operator--(int) {
-            base_iterator copy = *this;
-            node = node->prev;
+        BaseIterator operator--(int) {
+            BaseIterator copy = *this;
+            node_ = node_->prev;
             return copy;
         }
 
-        base_iterator next() const {
-            return iterator(node->next);
+        BaseIterator next() const {
+            return iterator(node_->next);
         }
 
-        base_iterator prev() const {
-            return iterator(node->prev);
+        BaseIterator prev() const {
+            return iterator(node_->prev);
         }
 
     private:
@@ -186,22 +188,22 @@ public:
         using true_dereferencable_type =
             typename std::conditional_t<is_const, const ListNode*, ListNode*>;
 
-        true_type node;
+        true_type node_;
 
-        explicit base_iterator(true_type nd)
-            : node(nd) {
+        explicit BaseIterator(true_type nd)
+            : node_(nd) {
         }
         /// TODO
     };
 
 public:
-    using iterator = base_iterator<false>;
-    using const_iterator = base_iterator<true>;
+    using iterator = BaseIterator<false>;
+    using const_iterator = BaseIterator<true>;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
-    BaseNode root;
+    BaseNode root_;
 
     size_t size_ = 0;
 
@@ -215,9 +217,9 @@ private:
         BaseNode(const BaseNode&) = delete;
 
     protected:
-        void link_between(BaseNode* prev_, BaseNode* next_) {
-            prev = prev_;
-            next = next_;
+        void link_between(BaseNode* prv, BaseNode* nxt) {
+            prev = prv;
+            next = nxt;
             prev->next = this;
             next->prev = this;
         }
@@ -227,10 +229,10 @@ private:
         T value;
 
         template <typename... Args>
-        ListNode(BaseNode* prev_, BaseNode* next_, const Args&... args)
+        ListNode(BaseNode* prv, BaseNode* nxt, const Args&... args)
             : BaseNode(),
               value(args...) {
-            BaseNode::link_between(prev_, next_);
+            BaseNode::link_between(prv, nxt);
         }
     };
 
@@ -243,10 +245,10 @@ private:
     void destroy_helper() {
         // Удаляет все, если все указатели правильны
         // И спасает от копипасты
-        while (root.next != &root) {
-            ListNode* to_kill = static_cast<ListNode*>(root.next);
-            root.next = to_kill->next;
-            root.next->prev = &root;
+        while (root_.next != &root_) {
+            ListNode* to_kill = static_cast<ListNode*>(root_.next);
+            root_.next = to_kill->next;
+            root_.next->prev = &root_;
             true_alloc_traits::destroy(allocator, to_kill);
             true_alloc_traits::deallocate(allocator, to_kill, 1);
         }
@@ -259,12 +261,12 @@ public:
 
     explicit List(const Allocator& alloc)
         : allocator(alloc),
-          root() {
+          root_() {
     }
 
     explicit List(size_t n, const Allocator& alloc = Allocator())
         : allocator(alloc),
-          root() {
+          root_() {
         if (n == 0) {
             return;
         }
@@ -273,7 +275,7 @@ public:
 
     explicit List(size_t n, const T& value, const Allocator& alloc = Allocator())
         : allocator(alloc),
-          root() {
+          root_() {
         build_from_equal_element(n, value);
     }
 
@@ -293,7 +295,7 @@ private:
         try {
             for (size_t i = 0; i < n; i++) {
                 new_element = true_alloc_traits::allocate(allocator, 1);
-                true_alloc_traits::construct(allocator, new_element, root.prev, &root,
+                true_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
                                              args...);  /// TODO: move semantics for T() ?
             }
         } catch (...) {
@@ -346,13 +348,13 @@ private:
 public:
     List(const List& other, const Allocator& alloc)
         : allocator(alloc),
-          root() {
+          root_() {
         build_by_other_list(other);
     }
 
     List(const List& other)
         : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())),
-          root() {
+          root_() {
         build_by_other_list(other);
     }
 
@@ -379,8 +381,8 @@ public:
     }
 
     void check_link_safety() const {
-        const BaseNode* now = root.next;
-        while (now != &root) {
+        const BaseNode* now = root_.next;
+        while (now != &root_) {
             if (now != (now->next->prev)) {
                 throw std::runtime_error("check failed :(");
             }
@@ -389,27 +391,27 @@ public:
     }
 
     iterator begin() {
-        return iterator(root.next);
+        return iterator(root_.next);
     }
 
     const_iterator begin() const {
-        return const_iterator(root.next);
+        return const_iterator(root_.next);
     }
 
     iterator end() {
-        return iterator(&root);
+        return iterator(&root_);
     }
 
     const_iterator end() const {
-        return const_iterator(&root);
+        return const_iterator(&root_);
     }
 
     const_iterator cbegin() const {
-        return const_iterator(root.next);
+        return const_iterator(root_.next);
     }
 
     const_iterator cend() const {
-        return const_iterator(&root);
+        return const_iterator(&root_);
     }
 
     reverse_iterator rbegin() {
