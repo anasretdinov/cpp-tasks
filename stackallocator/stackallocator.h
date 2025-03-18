@@ -208,9 +208,9 @@ public:
 
 private:
     void destroy_helper() {
-        std::cerr << "CALLED DESTROY HELPER\n";
-        std::cerr << "id by last : " << crbegin()->x << '\n';
-        std::cerr << size() << "that's the size\n";
+        // std::cerr << "CALLED DESTROY HELPER\n";
+        // std::cerr << "id by last : " << crbegin()->x << '\n';
+        // std::cerr << size() << "that's the size\n";
         // Удаляет все, если все указатели правильны 
         // И спасает от копипасты 
         while (root.next != &root) {
@@ -272,7 +272,7 @@ private:
             2. this->allocator is defined correctly at the moment
         */
         size_ = other.size_;
-        std::cerr << " called build by other\n";
+        // std::cerr << " called build by other\n";
         typename List<T, OtherAllocator>::const_iterator it = other.begin();
         ListNode * new_element = nullptr;
         try {
@@ -310,7 +310,7 @@ public:
             select_on_container_copy_construction
                 (other.get_allocator()))
     , root() {
-        std::cerr << "Hopa!\n";
+        // std::cerr << "Hopa!\n";
         build_by_other_list(other); 
     }
 
@@ -328,7 +328,14 @@ public:
         }
         build_by_other_list(other);
         return *this;
-    }   
+    }
+
+    List& operator=(const List& other) {
+        destroy_helper();
+        build_by_other_list(other);
+        return *this;
+    }
+
 
     ~List() noexcept {
         destroy_helper();

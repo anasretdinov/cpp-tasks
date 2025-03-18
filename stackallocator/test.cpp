@@ -14,7 +14,7 @@
 
 #include "stackallocator.h"
 
-/*
+
 
 // template <typename T, typename Alloc = std::allocator<T>>
 // using List = std::list<T, Alloc>;
@@ -1204,9 +1204,9 @@ TEST_CASE("Benchmark for List") {
 
 }  // namespace by_mesyarik
 
-*/
 
 
+/*
 
 #include <random>
 struct dumb{
@@ -1263,10 +1263,11 @@ void an_test_1() {
     a.check_link_safety();
     std::cerr << " a is not used then\n";
     b.check_link_safety();
-    REQUIRE(b.size() == 0);
+    REQUIRE(b.size() == 2);
 }
 
 TEST_CASE("Empty test from Amir") {
     an_test_1<List>();
     // an_test_1<ListSubst>();
 }
+*/
