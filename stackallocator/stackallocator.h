@@ -272,13 +272,14 @@ private:
             2. this->allocator is defined correctly at the moment
         */
         size_ = other.size_;
-        
+        std::cerr << " called build by other\n";
         typename List<T, OtherAllocator>::const_iterator it = other.begin();
         ListNode * new_element = nullptr;
         try {
             while (it != other.end()) {
                 new_element = true_alloc_traits::allocate(allocator, 1);
                 true_alloc_traits::construct(allocator, new_element, root.prev, &root, *it);
+                ++it;
             }
         } catch(...) {
             true_alloc_traits::deallocate(allocator, new_element, 1);
@@ -309,6 +310,7 @@ public:
             select_on_container_copy_construction
                 (other.get_allocator()))
     , root() {
+        std::cerr << "Hopa!\n";
         build_by_other_list(other); 
     }
 
