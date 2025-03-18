@@ -16,12 +16,14 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     std::byte* get_memory(size_t amount , size_t alignment) {
+        std::cout << "Calling memory " << amount << ' ' << alignment << '\n';
         void* tailcast = reinterpret_cast<void*>(tail);
         // assert(amount % alignment == 0);
         size_t space = N - (tail - mem.begin());
+        std::cout << space << " left?\n";
         std::byte* allocated_start = reinterpret_cast<std::byte*>(custom_align(alignment, amount, tailcast, space));
         if (!allocated_start) {
-            throw std::bad_alloc();
+            throw std::runtime_error("Bazinga");
         }
         tail = allocated_start + amount;
         return allocated_start;
@@ -64,7 +66,7 @@ public:
     StackAllocator& operator = (const StackAllocator& alloc) noexcept = default;
     
     T* allocate(size_t n) noexcept {
-        void* raw_memory = storage -> get_memory(n * sizeof(T), sizeof(T));
+        void* raw_memory = storage -> get_memory(n * sizeof(T), alignof(T));
         return reinterpret_cast<T*>(raw_memory);
     }
 
@@ -187,9 +189,18 @@ private:
 
         BaseNode(const BaseNode&) = delete; // без хуйни 
 
+        /* 
         BaseNode(BaseNode * prev_, BaseNode * next_)
         : prev(prev_)
         , next(next_) {
+            prev -> next = this;
+            next -> prev = this;
+        }
+        */
+    protected:
+        void link_between(BaseNode * prev_, BaseNode * next_) {
+            prev = prev_;
+            next = next_;
             prev -> next = this;
             next -> prev = this;
         }
@@ -198,7 +209,9 @@ private:
     struct ListNode : BaseNode {
         T value;
 
-        ListNode(BaseNode * prev_, BaseNode * next_, const T& val) : BaseNode(prev_, next_), value(val) {}
+        ListNode(BaseNode * prev_, BaseNode * next_, const T& val) : BaseNode(), value(val) {
+            BaseNode::link_between(prev_, next_);
+        }
     };
 
 public:
@@ -342,19 +355,13 @@ public:
     }
     
     void check_link_safety() const {
-        std::cerr << "Check called\n";
         const BaseNode* now = root.next;
         while (now != &root) {
-            std::cerr << now << ' ' << &root << '\n';
-            if (now == (now->next->prev)) {
-                std::cerr << "OK!\n";
-            } else {
-                std::cerr << " there are we!\n";
+            if (now != (now->next->prev)) {
                 throw std::runtime_error("check failed :(");
             }
             now = now->next;
         }
-        std::cerr << " Check completed!\n";
     }
     
     iterator begin() {

@@ -562,7 +562,7 @@ TEST_CASE("Allocator") {
         using DataT = size_t;
         constexpr size_t kBytesCount = kSmallSize * (sizeof(DataT) + sizeof(void*) + sizeof(void*));
         using Alloc = StackAllocator<DataT, kBytesCount>;
-
+    
         auto small_storage = StackStorage<kBytesCount>();
         auto small_list = List<DataT, Alloc>(Alloc(small_storage));
         for (size_t i = 0; i < kSmallSize; ++i) {
@@ -1206,7 +1206,7 @@ TEST_CASE("Benchmark for List") {
 
 
 
-/*
+
 
 #include <random>
 struct dumb{
@@ -1270,4 +1270,39 @@ TEST_CASE("Empty test from Amir") {
     an_test_1<List>();
     // an_test_1<ListSubst>();
 }
-*/
+
+constexpr int low_k = 10;
+constexpr size_t node_size = sizeof(size_t) + sizeof(void*) + sizeof(void*);
+
+struct exact_56{
+    size_t a,b,c,d,e,f,g;
+};
+
+void progrev_allocator() {
+    REQUIRE(sizeof(exact_56) == 56);
+    StackStorage<56> rr;
+    std::cout << &rr << " ss adress\n";
+    StackAllocator<exact_56, 56> sa(rr);
+    std::cout << sa.allocate(1) << '\n';
+}
+
+TEST_CASE("Memory test from Amir") {
+    SECTION("Allocator progrev") {
+        progrev_allocator();
+    }
+
+    SECTION("228") {
+
+
+        StackStorage<low_k * node_size> little_storage;
+
+        StackAllocator<size_t, low_k * node_size> alloc(little_storage);
+
+        List<size_t, StackAllocator<size_t, low_k * node_size>> list1(alloc);
+
+        for (size_t i = 0; i < low_k; i++) {
+            std::cout << i << "-th step \n";
+            list1.push_back(i); 
+        }
+    }
+}
