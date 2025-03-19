@@ -32,7 +32,7 @@ public:
         return first_free_align;
         */
 
-        mem_type* first_free_align = 
+        mem_type* first_free_align =
             custom_align(alignment, amount, mem_ + first_free_, space_left_);
 
         if (first_free_align == nullptr) {
@@ -140,6 +140,11 @@ public:
         }
 
         // BaseIterator& operator=(const BaseIterator&) = default;
+
+        BaseIterator& operator=(const BaseIterator<false>& val) {
+            node_ = val.node_;
+            return *this;
+        }
 
         reference operator*() const {
             return static_cast<true_dereferencable_type>(node_)->value;
@@ -469,7 +474,7 @@ public:
     };
 
     iterator erase(const_iterator pos) {
-        const ListNode* current = static_cast<const ListNode*>(pos.node);
+        const ListNode* current = static_cast<const ListNode*>(pos.node_);
 
         current->next->prev = current->prev;
         current->prev->next = current->next;
@@ -484,7 +489,7 @@ public:
     }
 
     iterator insert(const_iterator pos, const T& value) {
-        BaseNode* after_new = const_cast<BaseNode*>(pos.node);
+        BaseNode* after_new = const_cast<BaseNode*>(pos.node_);
         BaseNode* before_new = after_new->prev;
         ListNode* new_element = true_alloc_traits::allocate(allocator, 1);
         try {
