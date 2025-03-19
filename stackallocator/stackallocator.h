@@ -5,11 +5,12 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
+
+using mem_type = unsigned char;
+
 template <size_t N>
 class StackStorage {
 public:
-    using mem_type = unsigned char;
-
     StackStorage() {
     }
 
@@ -83,7 +84,7 @@ public:
     // StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
 
     T* allocate(size_t n) {
-        void* raw_memory = storage_->get_memory(n * sizeof(T), alignof(T));
+        mem_type* raw_memory = storage_->get_memory(n * kSize, kAlignment);
         return reinterpret_cast<T*>(raw_memory);
     }
 
@@ -102,6 +103,8 @@ public:
 
 private:
     StackStorage<N>* storage_ = nullptr;
+    static constexpr size_t kAlignment = alignof(T);
+    static constexpr size_t kSize = sizeof(T);
 };
 
 template <typename T, typename Allocator = std::allocator<T>>
