@@ -9,7 +9,7 @@
 using mem_type = unsigned char;
 
 template <size_t N>
-class StackStorage {
+class alignas(std::max_align_t) StackStorage {
 public:
     StackStorage() {
     }
@@ -19,20 +19,6 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     mem_type* get_memory(size_t amount, size_t alignment) {
-        /*
-        void* tail_casted = reinterpret_cast<void*>(mem_ + first_free_);
-        mem_type* first_free_align =
-            reinterpret_cast<mem_type*>(std::align(alignment, amount, tail_casted, space_left_));
-
-        if (first_free_align == nullptr) {
-            throw std::bad_alloc();
-        }
-
-        space_left_ -= amount;
-        first_free_ = (N - space_left_);
-        return first_free_align;
-        */
-
         mem_type* first_free_align =
             custom_align(alignment, amount, mem_ + first_free_, space_left_);
 
@@ -88,8 +74,7 @@ public:
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) noexcept {
-    }  // Dumb version does nothing
+    void deallocate(T*, size_t) noexcept = default;
 
     template <typename OtherT, size_t OtherN>
     bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
@@ -150,11 +135,11 @@ public:
         }
 
         reference operator*() const {
-            return static_cast<true_dereferencable_type>(node_)->value;
+            return static_cast<dereferencable_data_type>(node_)->value;
         }
 
         pointer operator->() const {
-            return &(static_cast<true_dereferencable_type>(node_)->value);
+            return *(*this);
         }
 
         bool operator==(const BaseIterator& it) const {
@@ -192,13 +177,13 @@ public:
         }
 
     private:
-        using true_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
-        using true_dereferencable_type =
+        using data_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
+        using dereferencable_data_type =
             typename std::conditional_t<is_const, const ListNode*, ListNode*>;
 
-        true_type node_;
+        data_type node_;
 
-        explicit BaseIterator(true_type nd)
+        explicit BaseIterator(data_type nd)
             : node_(nd) {
         }
         /// TODO
@@ -207,6 +192,7 @@ public:
 public:
     using iterator = BaseIterator<false>;
     using const_iterator = BaseIterator<true>;
+    
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
