@@ -53,3 +53,4 @@ CppProperties.json
 .vs/
 .DS_Store
 .mypy_cache/
+.stackallocator/insights_out.cpp
