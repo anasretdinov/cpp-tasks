@@ -74,7 +74,7 @@ public:
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) noexcept = default;
+    void deallocate(T*, size_t) noexcept {};
 
     template <typename OtherT, size_t OtherN>
     bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
@@ -236,7 +236,7 @@ public:
     }
 
 private:
-    void destroy_helper() {
+    void clear() {
         // Удаляет все, если все указатели правильны
         // И спасает от копипасты
         while (root_.next != &root_) {
@@ -254,13 +254,11 @@ public:
     }
 
     explicit List(const Allocator& alloc)
-        : allocator(alloc),
-          root_() {
+        : allocator(alloc) {
     }
 
     explicit List(size_t n, const Allocator& alloc = Allocator())
-        : allocator(alloc),
-          root_() {
+        : List(alloc) {
         if (n == 0) {
             return;
         }
@@ -268,8 +266,7 @@ public:
     }
 
     explicit List(size_t n, const T& value, const Allocator& alloc = Allocator())
-        : allocator(alloc),
-          root_() {
+        : allocator(alloc) {
         build_from_equal_element(n, value);
     }
 
@@ -286,17 +283,11 @@ private:
             return;  // По стандарту это UB, но по моему представлению - empty list
         }
         ListNode* new_element = nullptr;
-        try {
-            for (size_t i = 0; i < n; i++) {
-                new_element = true_alloc_traits::allocate(allocator, 1);
-                true_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
-                                             args...);  /// TODO: move semantics for T() ?
-            }
-        } catch (...) {
-            // полагаю что исключение в T(), т.к. остальные noexcept
-            true_alloc_traits::deallocate(allocator, new_element, 1);
-            destroy_helper();
-            throw;
+        for (size_t i = 0; i < n; i++) {
+            new_element = true_alloc_traits::allocate(allocator, 1);
+            true_alloc_traits::construct(
+                allocator, new_element, root_.prev, &root_, args...
+            );  /// TODO: move semantics for T() ?
         }
     }
 
@@ -314,7 +305,7 @@ private:
                 ++it;
             }
         } catch (...) {
-            destroy_helper();
+            clear();
             throw;
         }
     }
@@ -341,14 +332,14 @@ private:
 
 public:
     List(const List& other, const Allocator& alloc)
-        : allocator(alloc),
-          root_() {
+        : allocator(alloc) 
+    {
         build_by_other_list(other);
     }
 
     List(const List& other)
-        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())),
-          root_() {
+        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())) 
+    {
         build_by_other_list(other);
     }
 
@@ -361,7 +352,7 @@ public:
             // реюзаем
             wise_assignment(other);
         } else {
-            destroy_helper();
+            clear();
             if constexpr (alloc_traits::propagate_on_container_copy_assignment::value) {
                 allocator = other.get_allocator();
             }
@@ -371,7 +362,7 @@ public:
     }
 
     ~List() noexcept {
-        destroy_helper();
+        clear();
     }
 
     void check_link_safety() const {
