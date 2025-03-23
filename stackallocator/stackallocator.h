@@ -192,7 +192,7 @@ public:
 public:
     using iterator = BaseIterator<false>;
     using const_iterator = BaseIterator<true>;
-    
+
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -285,9 +285,8 @@ private:
         ListNode* new_element = nullptr;
         for (size_t i = 0; i < n; i++) {
             new_element = true_alloc_traits::allocate(allocator, 1);
-            true_alloc_traits::construct(
-                allocator, new_element, root_.prev, &root_, args...
-            );  /// TODO: move semantics for T() ?
+            true_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
+                                         args...);  /// TODO: move semantics for T() ?
         }
     }
 
@@ -332,14 +331,12 @@ private:
 
 public:
     List(const List& other, const Allocator& alloc)
-        : allocator(alloc) 
-    {
+        : allocator(alloc) {
         build_by_other_list(other);
     }
 
     List(const List& other)
-        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())) 
-    {
+        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())) {
         build_by_other_list(other);
     }
 
