@@ -299,14 +299,9 @@ private:
         */
         size_ = 0;
         const_iterator it = other.cbegin();
-        try {
-            while (it != other.cend()) {
-                push_back(*it);
-                ++it;
-            }
-        } catch (...) {
-            clear();
-            throw;
+        while (it != other.cend()) {
+            push_back(*it);
+            ++it;
         }
     }
 
