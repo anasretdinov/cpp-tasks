@@ -136,7 +136,7 @@ public:
         }
 
         reference operator*() const {
-            return static_cast<true_dereferencable_type>(node_)->value;
+            return static_cast<data_dereferencable_type>(node_)->value;
         }
 
         pointer operator->() const {
@@ -178,13 +178,13 @@ public:
         }
 
     private:
-        using true_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
-        using true_dereferencable_type =
+        using data_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
+        using data_dereferencable_type =
             typename std::conditional_t<is_const, const ListNode*, ListNode*>;
 
-        true_type node_;
+        data_type node_;
 
-        explicit BaseIterator(true_type nd)
+        explicit BaseIterator(data_type nd)
             : node_(nd) {
         }
         /// TODO
