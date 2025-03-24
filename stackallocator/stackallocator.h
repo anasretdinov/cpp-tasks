@@ -238,7 +238,7 @@ public:
     }
 
 private:
-    void destroy_helper() {
+    void clear() {
         // Удаляет все, если все указатели правильны
         // И спасает от копипасты
         while (root_.next != &root_) {
@@ -297,7 +297,7 @@ private:
         } catch (...) {
             // полагаю что исключение в T(), т.к. остальные noexcept
             true_alloc_traits::deallocate(allocator, new_element, 1);
-            destroy_helper();
+            clear();
             throw;
         }
     }
@@ -316,7 +316,7 @@ private:
                 ++it;
             }
         } catch (...) {
-            destroy_helper();
+            clear();
             throw;
         }
     }
@@ -361,7 +361,7 @@ public:
             // реюзаем
             wise_assignment(other);
         } else {
-            destroy_helper();
+            clear();
             if constexpr (alloc_traits::propagate_on_container_copy_assignment::value) {
                 allocator = other.get_allocator();
             }
@@ -371,7 +371,7 @@ public:
     }
 
     ~List() noexcept {
-        destroy_helper();
+        clear();
     }
 
     void check_link_safety() const {
