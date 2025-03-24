@@ -140,7 +140,7 @@ public:
         }
 
         pointer operator->() const {
-            return &(static_cast<true_dereferencable_type>(node_)->value);
+            return &(this -> operator*());
         }
 
         bool operator==(const BaseIterator& it) const {
