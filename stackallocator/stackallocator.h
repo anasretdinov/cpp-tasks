@@ -9,7 +9,7 @@
 using mem_type = unsigned char;
 
 template <size_t N>
-class StackStorage {
+class alignas(std::max_align_t) StackStorage {
 public:
     StackStorage() {
     }
@@ -19,20 +19,6 @@ public:
     StackStorage(const StackStorage&) = delete;
 
     mem_type* get_memory(size_t amount, size_t alignment) {
-        /*
-        void* tail_casted = reinterpret_cast<void*>(mem_ + first_free_);
-        mem_type* first_free_align =
-            reinterpret_cast<mem_type*>(std::align(alignment, amount, tail_casted, space_left_));
-
-        if (first_free_align == nullptr) {
-            throw std::bad_alloc();
-        }
-
-        space_left_ -= amount;
-        first_free_ = (N - space_left_);
-        return first_free_align;
-        */
-
         mem_type* first_free_align =
             custom_align(alignment, amount, mem_ + first_free_, space_left_);
 
@@ -91,8 +77,8 @@ public:
     void deallocate(T*, size_t) noexcept {
     }  // Dumb version does nothing
 
-    template <typename OtherT, size_t OtherN>
-    bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
+    template <typename OtherT>
+    bool operator==(const StackAllocator<OtherT, N>& alloc) const noexcept {
         return (storage_ == alloc.storage_);
     }
 
