@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <iterator>
@@ -9,7 +10,7 @@
 using mem_type = unsigned char;
 
 template <size_t N>
-class StackStorage {
+class alignas(std::max_align_t) StackStorage {
 public:
     StackStorage() {
     }
