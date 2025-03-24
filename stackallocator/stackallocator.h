@@ -78,8 +78,8 @@ public:
     void deallocate(T*, size_t) noexcept {
     }  // Dumb version does nothing
 
-    template <typename OtherT, size_t OtherN>
-    bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
+    template <typename OtherT>
+    bool operator==(const StackAllocator<OtherT, N>& alloc) const noexcept {
         return (storage_ == alloc.storage_);
     }
 
