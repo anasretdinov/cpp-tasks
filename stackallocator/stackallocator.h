@@ -251,18 +251,17 @@ private:
     }
 
 public:
-    List()
-        : List(Allocator()) {
-    }
-
     explicit List(const Allocator& alloc)
         : allocator(alloc),
           root_() {
     }
 
+    List()
+        : List(Allocator()) {
+    }
+
     explicit List(size_t n, const Allocator& alloc = Allocator())
-        : allocator(alloc),
-          root_() {
+        : List(alloc) {
         if (n == 0) {
             return;
         }
@@ -270,8 +269,7 @@ public:
     }
 
     explicit List(size_t n, const T& value, const Allocator& alloc = Allocator())
-        : allocator(alloc),
-          root_() {
+        : List(alloc) {
         build_from_equal_element(n, value);
     }
 
@@ -343,14 +341,12 @@ private:
 
 public:
     List(const List& other, const Allocator& alloc)
-        : allocator(alloc),
-          root_() {
+        : List(alloc) {
         build_by_other_list(other);
     }
 
     List(const List& other)
-        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())),
-          root_() {
+        : List(alloc_traits::select_on_container_copy_construction(other.get_allocator())) {
         build_by_other_list(other);
     }
 
@@ -448,6 +444,18 @@ public:
 
     void push_front(const T& val) {
         insert(cbegin(), val);
+    }
+
+    template <typename... Args>
+    void emplace_back(const Args&... args) {
+        ListNode* place = node_alloc_traits::allocate(allocator, 1);
+
+        try {
+            node_alloc_traits::construct(allocator, place, root_.prev, root_, args...);
+        } catch (...) {
+            node_alloc_traits::deallocate(allocator, place, 1);
+            throw;
+        }
     }
 
     void pop_back() {
