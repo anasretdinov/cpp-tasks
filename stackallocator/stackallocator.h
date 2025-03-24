@@ -281,22 +281,13 @@ private:
             1. *this is empty
             2. this->allocator is defined correctly at the moment
         */
-        size_ = n;
+        size_ = 0;
         if (n == 0) {
             return;  // По стандарту это UB, но по моему представлению - empty list
         }
-        ListNode* new_element = nullptr;
-        try {
-            for (size_t i = 0; i < n; i++) {
-                new_element = node_alloc_traits::allocate(allocator, 1);
-                node_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
-                                             args...);  /// TODO: move semantics for T() ?
-            }
-        } catch (...) {
-            // полагаю что исключение в T(), т.к. остальные noexcept
-            node_alloc_traits::deallocate(allocator, new_element, 1);
-            clear();
-            throw;
+        
+        for (size_t i = 0; i < n; i++) {
+            emplace_back(args...);
         }
     }
 
@@ -449,9 +440,9 @@ public:
     template <typename... Args>
     void emplace_back(const Args&... args) {
         ListNode* place = node_alloc_traits::allocate(allocator, 1);
-
+        size_++;
         try {
-            node_alloc_traits::construct(allocator, place, root_.prev, root_, args...);
+            node_alloc_traits::construct(allocator, place, root_.prev, &root_, args...);
         } catch (...) {
             node_alloc_traits::deallocate(allocator, place, 1);
             throw;
