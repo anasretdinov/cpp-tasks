@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <iterator>
@@ -74,7 +75,7 @@ public:
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) noexcept = default;
+    void deallocate(T*, size_t) noexcept {};
 
     template <typename OtherT>
     bool operator==(const StackAllocator<OtherT, N>& alloc) const noexcept {
@@ -193,7 +194,7 @@ public:
 
     using iterator = BaseIterator<false>;
     using const_iterator = BaseIterator<true>;
-    
+
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -255,8 +256,7 @@ public:
     }
 
     explicit List(const Allocator& alloc)
-        : allocator(alloc),
-          root_() {
+        : allocator(alloc) {
     }
 
     explicit List(size_t n, const Allocator& alloc = Allocator())
@@ -268,8 +268,7 @@ public:
     }
 
     explicit List(size_t n, const T& value, const Allocator& alloc = Allocator())
-        : allocator(alloc),
-          root_() {
+        : allocator(alloc) {
         build_from_equal_element(n, value);
     }
 
@@ -342,14 +341,12 @@ private:
 
 public:
     List(const List& other, const Allocator& alloc)
-        : allocator(alloc),
-          root_() {
+        : allocator(alloc) {
         build_by_other_list(other);
     }
 
     List(const List& other)
-        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())),
-          root_() {
+        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())) {
         build_by_other_list(other);
     }
 
