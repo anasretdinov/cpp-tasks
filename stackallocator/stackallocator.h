@@ -450,6 +450,18 @@ public:
         insert(cbegin(), val);
     }
 
+    template <typename... Args>
+    void emplace_back(const Args&... args) {
+        ListNode* place = node_alloc_traits::allocate(allocator, 1);
+
+        try {
+            node_alloc_traits::construct(allocator, place, root_.prev, root_, args...);
+        } catch (...) {
+            node_alloc_traits::deallocate(allocator, place, 1);
+            throw;
+        }
+    }
+
     void pop_back() {
         if (empty()) {
             throw std::out_of_range("pop_back from empty List");
