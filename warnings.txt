@@ -1,0 +1,20 @@
+--- ../stackallocator/stackallocator.h	(original)
++++ ../stackallocator/stackallocator.h	(reformatted)
+@@ -32,7 +32,7 @@
+         return first_free_align;
+         */
+ 
+-        mem_type* first_free_align = 
++        mem_type* first_free_align =
+             custom_align(alignment, amount, mem_ + first_free_, space_left_);
+ 
+         if (first_free_align == nullptr) {
+@@ -141,7 +141,7 @@
+ 
+         // BaseIterator& operator=(const BaseIterator&) = default;
+ 
+-        BaseIterator& operator=(const BaseIterator<false>&val) {
++        BaseIterator& operator=(const BaseIterator<false>& val) {
+             node_ = val.node_;
+             return *this;
+         }
