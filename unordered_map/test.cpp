@@ -7,15 +7,14 @@
 #include <ranges>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
-// #include "unordered_map.h"
+#include "unordered_map.h"
 
-template <typename Key, typename Value, typename Hash = std::hash<Key>,
-          typename EqualTo = std::equal_to<Key>,
-          typename Alloc = std::allocator<std::pair<const Key, Value>>>
-using UnorderedMap = std::unordered_map<Key, Value, Hash, EqualTo, Alloc>;
+// template <typename Key, typename Value, typename Hash = std::hash<Key>,
+//           typename EqualTo = std::equal_to<Key>,
+//           typename Alloc = std::allocator<std::pair<const Key, Value>>>
+// using UnorderedMap = std::unordered_map<Key, Value, Hash, EqualTo, Alloc>;
 
 constexpr size_t operator""_sz(unsigned long long int x) {
     return static_cast<size_t>(x);
@@ -358,6 +357,7 @@ TEST_CASE("Special allocator tests") {
 }  // namespace YandexContest
 
 namespace Additional {
+
 struct Data {
     int data;
 
@@ -370,8 +370,7 @@ constexpr Trivial operator""_tr(unsigned long long int x) {
 }
 
 struct NonTrivial : Data {
-    NonTrivial() {
-    }
+    NonTrivial() = default;
     NonTrivial(int x) {
         data = x;
     }
@@ -381,27 +380,30 @@ NonTrivial operator""_ntr(unsigned long long int x) {
 }
 
 struct NotDefaultConstructible {
+    int data;
+
     NotDefaultConstructible() = delete;
     NotDefaultConstructible(int input)
         : data(input) {
     }
-    int data;
 
     auto operator<=>(const NotDefaultConstructible&) const = default;
 };
 
 struct NeitherDefaultNorCopyConstructible {
+    int data;
+    const bool moved = false;
+
     NeitherDefaultNorCopyConstructible() = delete;
     NeitherDefaultNorCopyConstructible(const NeitherDefaultNorCopyConstructible&) = delete;
     NeitherDefaultNorCopyConstructible(NeitherDefaultNorCopyConstructible&& other)
         : data(other.data),
-          moved(true){};
+          moved(true) {
+    }
     NeitherDefaultNorCopyConstructible(int input)
         : data(input),
           moved(false) {
     }
-    int data;
-    const bool moved = false;
 
     auto operator<=>(const NeitherDefaultNorCopyConstructible&) const = default;
 };
@@ -458,8 +460,21 @@ struct NotPropagatedCountingAllocator {
     }
 };
 
+template <typename T>
+void AssignToSelf(T& value) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+    value = value;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+}
+
 const size_t kSmallSize = 17;
 const size_t kMediumSize = 100;
+const size_t kBigSize = 10'000;
 
 namespace ranges = std::ranges;
 
@@ -521,6 +536,14 @@ TEST_CASE("Construction & Assignment") {
         REQUIRE(map2.size() == kSmallSize);
     }
 
+    SECTION("Multiple self-assignment") {
+        UnorderedMap<int, Trivial> map{kBigSize};
+        constexpr size_t kIterCount = 10'000'000;
+        for (size_t _ = 0; _ < kIterCount; ++_) {
+            AssignToSelf(map);
+        }
+    }
+
     SECTION("Swap") {
         auto map = make_small_map<Trivial>();
         decltype(map) another;
@@ -567,11 +590,11 @@ TEST_CASE("Modifications") {
 
         moving_map.emplace(std::move(b), a);
         REQUIRE(a == "a");
-        REQUIRE(b == "");
+        REQUIRE(b.empty());
 
         moving_map.emplace(std::move(c), std::move(a));
-        REQUIRE(a == "");
-        REQUIRE(c == "");
+        REQUIRE(a.empty());
+        REQUIRE(c.empty());
         REQUIRE(moving_map.size() == 3_sz);
         REQUIRE(moving_map.at("a") == "a");
         REQUIRE(moving_map.at("b") == "a");
@@ -608,11 +631,11 @@ TEST_CASE("Modifications") {
         node b{"b", "b"};
 
         moving_map.insert(a);
-        REQUIRE("a" == a.first);
+        REQUIRE(a.first == "a");
         REQUIRE(moving_map.size() == 1_sz);
 
         moving_map.insert(std::move(b));
-        REQUIRE("" == b.first);
+        REQUIRE(b.first.empty());
         REQUIRE(moving_map.size() == 2_sz);
 
         REQUIRE(moving_map.at("a") == "a");
@@ -648,7 +671,7 @@ TEST_CASE("Modifications") {
         map.insert(std::move_iterator(storage.begin()), std::move_iterator(storage.end()));
         REQUIRE(storage.size() == kSmallSize);
         REQUIRE(ranges::all_of(storage, [&](auto& p) {
-            bool equal = p.second == "";
+            bool equal = p.second.empty();
             CHECK(equal);
             return equal;
         }));
@@ -688,14 +711,14 @@ TEST_CASE("Access") {
 
         UnorderedMap<std::string, std::string> map;
         map[std::move(storage[0])] = std::move(storage[1]);
-        REQUIRE(storage[0] == "");
-        REQUIRE(storage[1] == "");
+        REQUIRE(storage[0].empty());
+        REQUIRE(storage[1].empty());
         map[std::move(storage[2])] = storage[3];
-        REQUIRE(storage[2] == "");
+        REQUIRE(storage[2].empty());
         REQUIRE(storage[3] == "3");
         map[storage[3]] = std::move(storage[4]);
         REQUIRE(storage[3] == "3");
-        REQUIRE(storage[4] == "");
+        REQUIRE(storage[4].empty());
     }
 
     SECTION("Find") {

@@ -467,7 +467,7 @@ TEST_CASE("Modification") {
         }
         REQUIRE(*l.begin() == 9);
         REQUIRE(*l.rbegin() == 0);
-        
+
         for (size_t i = 0; i < 10; ++i) {
             l.erase(it++);
         }
