@@ -54,4 +54,3 @@ CppProperties.json
 .DS_Store
 .mypy_cache/
 multiplication/dumb.cpp
-.gitignore
