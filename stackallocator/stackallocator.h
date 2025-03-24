@@ -285,7 +285,7 @@ private:
         if (n == 0) {
             return;  // По стандарту это UB, но по моему представлению - empty list
         }
-        
+
         for (size_t i = 0; i < n; i++) {
             emplace_back(args...);
         }
