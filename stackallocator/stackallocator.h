@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <iterator>
@@ -10,7 +9,7 @@
 using mem_type = unsigned char;
 
 template <size_t N>
-class alignas(std::max_align_t) StackStorage {
+class StackStorage {
 public:
     StackStorage() {
     }
@@ -75,10 +74,11 @@ public:
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) noexcept {};
+    void deallocate(T*, size_t) noexcept {
+    }  // Dumb version does nothing
 
-    template <typename OtherT>
-    bool operator==(const StackAllocator<OtherT, N>& alloc) const noexcept {
+    template <typename OtherT, size_t OtherN>
+    bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
         return (storage_ == alloc.storage_);
     }
 
@@ -110,9 +110,9 @@ private:
 public:
     friend struct BaseNode;
     friend struct ListNode;
-    using true_alloc_type = typename alloc_traits::template rebind_alloc<ListNode>;
-    using true_alloc_traits = typename alloc_traits::template rebind_traits<ListNode>;
-    true_alloc_type allocator;
+    using node_alloc_type = typename alloc_traits::template rebind_alloc<ListNode>;
+    using node_alloc_traits = typename alloc_traits::template rebind_traits<ListNode>;
+    node_alloc_type allocator;
 
     template <bool is_const>
     class BaseIterator {
@@ -136,11 +136,11 @@ public:
         }
 
         reference operator*() const {
-            return static_cast<dereferencable_data_type>(node_)->value;
+            return static_cast<node_dereferencable_type>(node_)->value;
         }
 
         pointer operator->() const {
-            return *(*this);
+            return &(static_cast<node_dereferencable_type>(node_)->value);
         }
 
         bool operator==(const BaseIterator& it) const {
@@ -178,23 +178,21 @@ public:
         }
 
     private:
-        using data_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
-        using dereferencable_data_type =
+        using node_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
+        using node_dereferencable_type =
             typename std::conditional_t<is_const, const ListNode*, ListNode*>;
 
-        data_type node_;
+        node_type node_;
 
-        explicit BaseIterator(data_type nd)
+        explicit BaseIterator(node_type nd)
             : node_(nd) {
         }
         /// TODO
     };
 
 public:
-
     using iterator = BaseIterator<false>;
     using const_iterator = BaseIterator<true>;
-
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -245,8 +243,8 @@ private:
             ListNode* to_kill = static_cast<ListNode*>(root_.next);
             root_.next = to_kill->next;
             root_.next->prev = &root_;
-            true_alloc_traits::destroy(allocator, to_kill);
-            true_alloc_traits::deallocate(allocator, to_kill, 1);
+            node_alloc_traits::destroy(allocator, to_kill);
+            node_alloc_traits::deallocate(allocator, to_kill, 1);
         }
     }
 
@@ -261,7 +259,8 @@ public:
     }
 
     explicit List(size_t n, const Allocator& alloc = Allocator())
-        : List(alloc) {
+        : allocator(alloc),
+          root_() {
         if (n == 0) {
             return;
         }
@@ -269,12 +268,12 @@ public:
     }
 
     explicit List(size_t n, const T& value, const Allocator& alloc = Allocator())
-        : List(alloc) {
+        : allocator(alloc),
+          root_() {
         build_from_equal_element(n, value);
     }
 
 private:
-
     template <typename... Args>
     void build_from_equal_element(size_t n, const Args&... args) {
         /*
@@ -282,21 +281,20 @@ private:
             1. *this is empty
             2. this->allocator is defined correctly at the moment
         */
-        size_ = 0;
+        size_ = n;
         if (n == 0) {
             return;  // По стандарту это UB, но по моему представлению - empty list
         }
-
         ListNode* new_element = nullptr;
         try {
             for (size_t i = 0; i < n; i++) {
-                new_element = true_alloc_traits::allocate(allocator, 1);
-                true_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
+                new_element = node_alloc_traits::allocate(allocator, 1);
+                node_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
                                              args...);  /// TODO: move semantics for T() ?
             }
         } catch (...) {
             // полагаю что исключение в T(), т.к. остальные noexcept
-            true_alloc_traits::deallocate(allocator, new_element, 1);
+            node_alloc_traits::deallocate(allocator, new_element, 1);
             clear();
             throw;
         }
@@ -343,12 +341,14 @@ private:
 
 public:
     List(const List& other, const Allocator& alloc)
-        : List(alloc) {
+        : allocator(alloc),
+          root_() {
         build_by_other_list(other);
     }
 
     List(const List& other)
-        : List(alloc_traits::select_on_container_copy_construction(other.get_allocator())) {
+        : allocator(alloc_traits::select_on_container_copy_construction(other.get_allocator())),
+          root_() {
         build_by_other_list(other);
     }
 
@@ -470,8 +470,8 @@ public:
 
         iterator to_return{current->next};
 
-        true_alloc_traits::destroy(allocator, current);
-        true_alloc_traits::deallocate(allocator, const_cast<ListNode*>(current), 1);
+        node_alloc_traits::destroy(allocator, current);
+        node_alloc_traits::deallocate(allocator, const_cast<ListNode*>(current), 1);
 
         size_--;
         return to_return;
@@ -480,11 +480,11 @@ public:
     iterator insert(const_iterator pos, const T& value) {
         BaseNode* after_new = const_cast<BaseNode*>(pos.node_);
         BaseNode* before_new = after_new->prev;
-        ListNode* new_element = true_alloc_traits::allocate(allocator, 1);
+        ListNode* new_element = node_alloc_traits::allocate(allocator, 1);
         try {
-            true_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
+            node_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
         } catch (...) {
-            true_alloc_traits::deallocate(allocator, new_element, 1);
+            node_alloc_traits::deallocate(allocator, new_element, 1);
             throw;
         }
 
