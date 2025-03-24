@@ -76,8 +76,8 @@ public:
 
     void deallocate(T*, size_t) noexcept = default;
 
-    template <typename OtherT, size_t OtherN>
-    bool operator==(const StackAllocator<OtherT, OtherN>& alloc) const noexcept {
+    template <typename OtherT>
+    bool operator==(const StackAllocator<OtherT, N>& alloc) const noexcept {
         return (storage_ == alloc.storage_);
     }
 
@@ -190,6 +190,7 @@ public:
     };
 
 public:
+
     using iterator = BaseIterator<false>;
     using const_iterator = BaseIterator<true>;
     
@@ -236,7 +237,7 @@ public:
     }
 
 private:
-    void destroy_helper() {
+    void clear() {
         // Удаляет все, если все указатели правильны
         // И спасает от копипасты
         while (root_.next != &root_) {
@@ -259,8 +260,7 @@ public:
     }
 
     explicit List(size_t n, const Allocator& alloc = Allocator())
-        : allocator(alloc),
-          root_() {
+        : List(alloc) {
         if (n == 0) {
             return;
         }
@@ -274,6 +274,14 @@ public:
     }
 
 private:
+    template <typename ...Args> 
+    void construct_element_at(ListNode* ptr, const Args&... args) {
+        true_alloc_traits::construct(
+            allocator, 
+            ptr, 
+            root_.prev, &root_, args...);
+    }
+
     template <typename... Args>
     void build_from_equal_element(size_t n, const Args&... args) {
         /*
@@ -281,22 +289,15 @@ private:
             1. *this is empty
             2. this->allocator is defined correctly at the moment
         */
-        size_ = n;
+        size_ = 0;
         if (n == 0) {
             return;  // По стандарту это UB, но по моему представлению - empty list
         }
-        ListNode* new_element = nullptr;
-        try {
-            for (size_t i = 0; i < n; i++) {
-                new_element = true_alloc_traits::allocate(allocator, 1);
-                true_alloc_traits::construct(allocator, new_element, root_.prev, &root_,
-                                             args...);  /// TODO: move semantics for T() ?
-            }
-        } catch (...) {
-            // полагаю что исключение в T(), т.к. остальные noexcept
-            true_alloc_traits::deallocate(allocator, new_element, 1);
-            destroy_helper();
-            throw;
+
+        for (size_t i = 0; i < n; i++) {
+            ListNode* new_element = true_alloc_traits::allocate(allocator, 1);
+            ++size_;
+            construct_element_at(new_element, args...);
         }
     }
 
@@ -314,7 +315,7 @@ private:
                 ++it;
             }
         } catch (...) {
-            destroy_helper();
+            clear();
             throw;
         }
     }
@@ -361,7 +362,7 @@ public:
             // реюзаем
             wise_assignment(other);
         } else {
-            destroy_helper();
+            clear();
             if constexpr (alloc_traits::propagate_on_container_copy_assignment::value) {
                 allocator = other.get_allocator();
             }
@@ -371,7 +372,7 @@ public:
     }
 
     ~List() noexcept {
-        destroy_helper();
+        clear();
     }
 
     void check_link_safety() const {
