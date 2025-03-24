@@ -75,7 +75,7 @@ public:
         return reinterpret_cast<T*>(raw_memory);
     }
 
-    void deallocate(T*, size_t) noexcept = default;
+    void deallocate(T*, size_t) noexcept {};
 
     template <typename OtherT>
     bool operator==(const StackAllocator<OtherT, N>& alloc) const noexcept {
