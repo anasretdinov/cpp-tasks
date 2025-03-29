@@ -492,6 +492,22 @@ bool maps_equal(const auto& left, const auto& right) {
                           [&right](const auto& pr) { return right.at(pr.first) == pr.second; });
 }
 
+TEST_CASE("Basic iterator concept check") {
+    using container_type = UnorderedMap<int, int>;
+    using iterator = container_type::iterator;
+    using const_iterator = container_type::const_iterator;
+
+    // See https://en.cppreference.com/w/cpp/iterator/input_iterator for more information
+    // Also check type aliases and methods from https://en.cppreference.com/w/cpp/named_req/InputIterator
+    static_assert(std::input_iterator<iterator>, "Map iterator must satisfy concept 'input_iterator'");
+    static_assert(std::input_iterator<const_iterator>, "Map const_iterator must satisfy concept 'input_iterator'");
+
+    // See https://en.cppreference.com/w/cpp/iterator/forward_iterator for more information
+    // Also check type aliases and methods from https://en.cppreference.com/w/cpp/named_req/ForwardIterator
+    static_assert(std::forward_iterator<iterator>, "Map iterator must satisfy concept 'forward_iterator'");
+    static_assert(std::forward_iterator<const_iterator>, "Map const_iterator must satisfy concept 'forward_iterator'");
+}
+
 TEST_CASE("Construction & Assignment") {
     SECTION("Default") {
         UnorderedMap<int, int> defaulted;
