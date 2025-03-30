@@ -498,14 +498,20 @@ TEST_CASE("Basic iterator concept check") {
     using const_iterator = container_type::const_iterator;
 
     // See https://en.cppreference.com/w/cpp/iterator/input_iterator for more information
-    // Also check type aliases and methods from https://en.cppreference.com/w/cpp/named_req/InputIterator
-    static_assert(std::input_iterator<iterator>, "Map iterator must satisfy concept 'input_iterator'");
-    static_assert(std::input_iterator<const_iterator>, "Map const_iterator must satisfy concept 'input_iterator'");
+    // Also check type aliases and methods from
+    // https://en.cppreference.com/w/cpp/named_req/InputIterator
+    static_assert(std::input_iterator<iterator>,
+                  "Map iterator must satisfy concept 'input_iterator'");
+    static_assert(std::input_iterator<const_iterator>,
+                  "Map const_iterator must satisfy concept 'input_iterator'");
 
     // See https://en.cppreference.com/w/cpp/iterator/forward_iterator for more information
-    // Also check type aliases and methods from https://en.cppreference.com/w/cpp/named_req/ForwardIterator
-    static_assert(std::forward_iterator<iterator>, "Map iterator must satisfy concept 'forward_iterator'");
-    static_assert(std::forward_iterator<const_iterator>, "Map const_iterator must satisfy concept 'forward_iterator'");
+    // Also check type aliases and methods from
+    // https://en.cppreference.com/w/cpp/named_req/ForwardIterator
+    static_assert(std::forward_iterator<iterator>,
+                  "Map iterator must satisfy concept 'forward_iterator'");
+    static_assert(std::forward_iterator<const_iterator>,
+                  "Map const_iterator must satisfy concept 'forward_iterator'");
 }
 
 TEST_CASE("Construction & Assignment") {
