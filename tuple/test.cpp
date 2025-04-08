@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "tuple.h"
@@ -115,29 +116,23 @@ class Debug {
 
 template <typename T>
 constexpr bool explicit_test() {
-    return requires(Tuple<int, T> t) {
-        t = {11, 22};
-    };
+    return requires(Tuple<int, T> t) { t = {11, 22}; };
+}
+
+template <typename T>
+constexpr bool explicit_default_test() {
+    return requires(Tuple<int, T> t) { t = {{}, {}}; };
+}
+
+template <typename T>
+constexpr bool explicit_conversion_test() {
+    return requires(Tuple<int, T> t) { t = Tuple<double, int>(3.14, 0); };
 }
 
 struct ExplicitDefault {
     explicit ExplicitDefault() {
     }
 };
-
-template <typename T>
-constexpr bool explicit_default_test() {
-    return requires(Tuple<int, T> t) {
-        t = {{}, {}};
-    };
-}
-
-template <typename T>
-constexpr bool explicit_conversion_test() {
-    return requires(Tuple<int, T> t) {
-        t = Tuple<double, int>(3.14, 0);
-    };
-}
 
 TEST_CASE("Explicit") {
     static_assert(explicit_test<int>());
@@ -194,9 +189,7 @@ TEST_CASE("DefaultConstructible") {
 
 template <typename T, typename... Args>
 constexpr bool IsGettable() {
-    return requires(Tuple<Args...> t) {
-        get<T>(t);
-    };
+    return requires(Tuple<Args...> t) { get<T>(t); };
 }
 
 TEST_CASE("Constructible") {
