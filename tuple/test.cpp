@@ -101,6 +101,13 @@ struct Accountant {
     }
 };
 
+void InitCounters() {
+    new_called = delete_called = 0;
+    Accountant::constructed = Accountant::destructed = 0;
+    Accountant::copy_constructed = Accountant::move_constructed = 0;
+    Accountant::copy_assigned = Accountant::move_assigned = 0;
+}
+
 template <typename T>
 class Debug {
     Debug() = delete;
@@ -165,6 +172,7 @@ static_assert(test<std::string>(0));
 */
 
 TEST_CASE("DefaultConstructible") {
+    InitCounters();
 
     static_assert(std::is_default_constructible_v<Tuple<int, int>>);
     static_assert(!std::is_default_constructible_v<Tuple<NotDefaultConstructible, std::string>>);
@@ -192,9 +200,7 @@ constexpr bool IsGettable() {
 }
 
 TEST_CASE("Constructible") {
-    new_called = delete_called = 0;
-    Accountant::copy_constructed = Accountant::move_constructed = Accountant::destructed = 0;
-    Accountant::copy_assigned = Accountant::move_assigned = 0;
+    InitCounters();
 
     static_assert(std::is_constructible_v<Tuple<int, double, char>, int, double, char>);
     static_assert(!std::is_constructible_v<Tuple<NotCopyableOnlyMovable, int>,
@@ -527,8 +533,7 @@ TEST_CASE("Constructible") {
 }
 
 TEST_CASE("Helpers") {
-    Accountant::copy_constructed = Accountant::move_constructed = Accountant::destructed = 0;
-    Accountant::copy_assigned = Accountant::move_assigned = 0;
+    InitCounters();
 
     SECTION("MakeTuple") {
         std::string test("test");

@@ -1,8 +1,8 @@
-#include "smart_pointers.h"
-
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
+
+#include "smart_pointers.h"
 
 // #include <memory>
 
@@ -22,7 +22,8 @@
 
 // template <typename T, typename Alloc, typename... Args>
 // SharedPtr<T> allocateShared(const Alloc& alloc, Args&&... args) {
-//     return std::allocate_shared<T>(std::forward<const Alloc>(alloc), std::forward<Args>(args)...);
+//     return std::allocate_shared<T>(std::forward<const Alloc>(alloc),
+//     std::forward<Args>(args)...);
 // }
 
 struct Base {
