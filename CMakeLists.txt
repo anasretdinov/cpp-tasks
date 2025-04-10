@@ -24,3 +24,6 @@ add_if_exists(private)
 
 add_if_exists(multiplication)
 add_if_exists(stackallocator)
+add_if_exists(unordered_map)
+add_if_exists(smart_pointers)
+add_if_exists(tuple)
