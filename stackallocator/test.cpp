@@ -624,7 +624,7 @@ TEST_CASE("Allocator") {
         REQUIRE(std::equal(small_list.rbegin(), small_list.rend(), IotaIterator<DataT>{0}));
 
         // no allocations for empty list
-        auto empty_list = List<DataT, Alloc>(Alloc(small_storage));
+        std::ignore = List<DataT, Alloc>(Alloc(small_storage));
         try {
             auto new_list = List<DataT, Alloc>(Alloc(small_storage));
             new_list.push_back({});
