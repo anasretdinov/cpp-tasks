@@ -1,5 +1,5 @@
 #include <memory>
-#include <allocator>
+// #include <allocator>
 
 
 template <typename T>
@@ -10,16 +10,16 @@ private:
         size_t spcount = 0;
 
         template<typename... Args>
-        ControlBlock(Args...&& args) : T(std::forward(args)), spcount(1) {}
+        ControlBlock(Args&&... args) : ptr(std::forward<Args>(args)...), spcount(1) {}
     };
     ControlBlock* cblock = nullptr;
 
     template<typename U, typename... Args>
-    friend SharedPtr<U> make_shared(Args...&& args);
+    friend SharedPtr<U> make_shared(Args&&... args);
 
-    template<typemame... Args>
-    SharedPtr(Args...&& args) 
-    : cblock(new ControlBlock(std::forward(args)...)) {}
+    template<typename... Args>
+    SharedPtr(Args&&... args) 
+    : cblock(new ControlBlock(std::forward<Args>(args)...)) {}
 public:
     SharedPtr(const SharedPtr& other) 
     : cblock(other.cblock) {
@@ -29,7 +29,7 @@ public:
     ~SharedPtr() {
         cblock -> spcount--;
         if (cblock -> spcount == 0) {
-            ~cblock();
+            delete (cblock);
             cblock = nullptr;
         }
     }
@@ -40,6 +40,7 @@ public:
     }
 
     SharedPtr& operator=(const SharedPtr& other) {
+
         cblock = other.cblock;
         cblock -> spcount++;
         return *this;
@@ -73,8 +74,8 @@ public:
 };
 
 template<typename T, typename... Args>
-SharedPtr<T> make_shared(Args...&& args) {
-    return SharedPtr<T>(args);
+SharedPtr<T> make_shared(Args&&... args) {
+    return SharedPtr<T>(std::forward<Args>(args)...);
 }
 
 template <typename>
