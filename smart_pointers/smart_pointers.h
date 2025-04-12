@@ -6,26 +6,69 @@ template <typename T>
 class SharedPtr {
 private:
     struct ControlBlock{
-        T ptr = nullptr;
+        T ptr;
         size_t spcount = 0;
-        ControlBlock
+
+        template<typename... Args>
+        ControlBlock(Args...&& args) : T(std::forward(args)), spcount(1) {}
     };
     ControlBlock* cblock = nullptr;
 
-    friend template<typename U, typename... Args>
-    SharedPtr<U> make_shared(Args...&& args);
+    template<typename U, typename... Args>
+    friend SharedPtr<U> make_shared(Args...&& args);
 
     template<typemame... Args>
     SharedPtr(Args...&& args) 
-    : cblock(new ControlBlock(std::forward(args)...)) {
-        
-    }
+    : cblock(new ControlBlock(std::forward(args)...)) {}
 public:
-    SharedPtr(const SharedPtr<T>& other) 
-    : cblock(other.cblock) {}
+    SharedPtr(const SharedPtr& other) 
+    : cblock(other.cblock) {
+        cblock -> spcount++;
+    }
 
     ~SharedPtr() {
-        (cblock -> spcount)
+        cblock -> spcount--;
+        if (cblock -> spcount == 0) {
+            ~cblock();
+            cblock = nullptr;
+        }
+    }
+
+    SharedPtr(SharedPtr&& other) 
+    : cblock(other.cblock) {
+        other.cblock = nullptr;
+    }
+
+    SharedPtr& operator=(const SharedPtr& other) {
+        cblock = other.cblock;
+        cblock -> spcount++;
+        return *this;
+    }
+
+    SharedPtr& operator=(SharedPtr&& other) {
+        cblock = other.cblock;
+        other.cblock = nullptr;
+        return *this;
+    }
+
+    size_t get_pscount() const {
+        return cblock -> spcount;
+    }
+
+    T& operator*() {
+        return cblock -> ptr;
+    }
+
+    const T& operator*() const {
+        return cblock -> ptr;
+    }
+
+    T* operator->() {
+        return &(cblock->ptr);
+    }
+
+    const T* operator->() const {
+        return &(cblock -> ptr);
     }
 };
 
