@@ -1,10 +1,25 @@
 #include <memory>
+#include <type_traits>
 // #include <allocator>
-
+// template<typename U>
+// class WeakPtr;
 
 template <typename T>
 class SharedPtr {
 private:
+
+    template<typename U>
+    union DataHolder {
+        U val;
+
+        DataHolder() = default;
+        ~DataHolder() = default;
+
+        void destroy_inside() {
+            val.~U();
+        }
+    };
+
     struct BaseControlBlock {
         size_t spcount = 0, weakcount = 0;
 
@@ -23,10 +38,12 @@ private:
 
     template<typename U>
     struct FatControlBlock : BaseControlBlock {
-        U obj;
+        DataHolder<U> obj;
 
         template<typename... Args>
-        FatControlBlock(Args&&... args) : obj(std::forward<Args>(args)...) {}
+        FatControlBlock(Args&&... args) {
+            new (&obj.val) U(std::forward<Args>(args)...);
+        }
 
         ~FatControlBlock() = default;
     };
@@ -38,11 +55,57 @@ private:
     friend SharedPtr<U> make_shared(Args&&... args);
 
     template<typename U>
-    friend class WeakPtr<U>;
+    friend class WeakPtr;
+
+    T* get_ptr() {
+        if (!ptr) {
+            return &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
+        } else {
+            return ptr;
+        }
+    }
+    
+    const T* get_ptr() const {
+        if (!ptr) {
+            return &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
+        } else {
+            return ptr;
+        }
+    }
+
+
+    // constructor for make_shared and WeakPtr::lock
+    SharedPtr(BaseControlBlock* cb, T* ptr)
+    : cblock(cb)
+    , ptr(ptr) {}
+
+
+    void delete_helper() {
+        if (!cblock) {
+            // типа мувнули/что-то еще
+            return;
+        }
+        cblock -> spcount--;
+
+        if (cblock -> spcount == 0) {
+            if (!ptr) {
+                (dynamic_cast<FatControlBlock<T>*>(cblock) -> obj).destroy_inside();
+            } else {
+                delete ptr;
+                ptr = nullptr;
+            }
+        }
+
+        if (cblock -> weakcount == 0) {
+            delete cblock;
+        }
+        
+        cblock = nullptr;
+    }
 public:
     SharedPtr()
     : cblock(new BaseControlBlock())
-    . ptr(nullptr) {}
+    , ptr(nullptr) {}
 
     SharedPtr(T* ptr) 
     : cblock(new WeakControlBlock())
@@ -55,9 +118,7 @@ public:
     }
 
     ~SharedPtr() {
-        
-        
-
+        delete_helper();
     }
 
     SharedPtr(SharedPtr&& other) 
@@ -68,9 +129,10 @@ public:
     }
 
     SharedPtr& operator=(const SharedPtr& other) {
-        if (*this == other) {
+        if (this == &other) {
             return *this;
         }
+        delete_helper();
         cblock = other.cblock;
         ptr = other.ptr;
         cblock -> spcount++;
@@ -78,9 +140,11 @@ public:
     }
 
     SharedPtr& operator=(SharedPtr&& other) {
+        delete_helper();
         cblock = other.cblock;
         ptr = other.ptr;
         other.cblock = nullptr;
+        other.ptr = nullptr;
         return *this;
     }
 
@@ -89,36 +153,36 @@ public:
     }
 
     T& operator*() {
-        return *ptr;
+        return *get_ptr();
     }
 
     const T& operator*() const {
-        return *ptr;
+        return *get_ptr();
     }
 
     T* operator->() {
-        return ptr;
+        return get_ptr();
     }
 
     const T* operator->() const {
-        return ptr;
+        return get_ptr();
     }
 };
 
 template<typename T, typename... Args>
 SharedPtr<T> make_shared(Args&&... args) {
-    return SharedPtr<T>(new SharedPtr<T>::FatControlBlock<T>(std::forward<Args>(args)...));
+    return SharedPtr<T>(new typename SharedPtr<T>::FatControlBlock<T>(std::forward<Args>(args)...), nullptr);
 }
 
 template <typename T>
 class WeakPtr {
 private:
-    SharedPtr<T>::BaseControlBlock cblock = nullptr;
+    SharedPtr<T>::BaseControlBlock* cblock = nullptr;
     T* ptr = nullptr;
 public:
-    WeakPtr(const SharedPtr& sp) 
+    WeakPtr(const SharedPtr<T>& sp) 
     : cblock(sp.cblock)
-    . ptr(sp.ptr) {
+    , ptr(sp.ptr) {
         cblock -> weakcount++;
     }
 
@@ -128,12 +192,12 @@ public:
 
     SharedPtr<T> lock() const noexcept {
         if (expired()) {
-
-        } else {
             return SharedPtr<T>();
+        } else {
+            cblock -> spcount++;
+            return SharedPtr<T>(cblock, ptr);    
         }
     }
-    // YOUR CODE HERE
 };
 
 template <typename>
