@@ -168,6 +168,25 @@ public:
     const T* operator->() const {
         return get_ptr();
     }
+
+    void swap(SharedPtr<T>& other) {
+        std::swap(ptr, other.ptr);
+        std::swap(cblock, other.cblock);
+    }
+
+    void reset(T* new_obj) {
+        delete_helper();
+        cblock = new WeakControlBlock();
+        ptr = new_obj;
+    }
+
+    void reset() {
+        delete_helper();
+    }
+
+    T* get() const {
+        return *this.operator->();
+    }
 };
 
 template<typename T, typename... Args>
