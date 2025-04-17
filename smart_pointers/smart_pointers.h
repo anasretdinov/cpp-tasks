@@ -81,6 +81,7 @@ private:
 
 
     void delete_helper() {
+        std::cout << " delete helper called\n";
         if (!cblock) {
             // типа мувнули/что-то еще
             return;
@@ -94,12 +95,12 @@ private:
                 delete ptr;
                 ptr = nullptr;
             }
+            
+            if (cblock -> weakcount == 0) {
+                delete cblock;
+            }
         }
 
-        if (cblock -> weakcount == 0) {
-            delete cblock;
-        }
-        
         cblock = nullptr;
     }
 public:
@@ -196,6 +197,16 @@ public:
         } else {
             cblock -> spcount++;
             return SharedPtr<T>(cblock, ptr);    
+        }
+    }
+
+    ~WeakPtr() {
+        if (!cblock) return;
+        cblock -> weakcount--;
+        if (cblock -> weakcount == 0 && expired()) {
+            // тогда надо совсем все сносить
+            delete cblock;
+            cblock = nullptr;
         }
     }
 };
