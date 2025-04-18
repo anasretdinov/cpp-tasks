@@ -12,8 +12,8 @@ private:
     union DataHolder {
         U val;
 
-        DataHolder() = default;
-        ~DataHolder() = default;
+        DataHolder() {};
+        ~DataHolder() {};
 
         void destroy_inside() {
             val.~U();
@@ -81,7 +81,6 @@ private:
 
 
     void delete_helper() {
-        std::cout << " delete helper called\n";
         if (!cblock) {
             // типа мувнули/что-то еще
             return;
@@ -185,7 +184,7 @@ public:
     }
 
     T* get() const {
-        return *this.operator->();
+        return const_cast<T*>(get_ptr());
     }
 };
 
