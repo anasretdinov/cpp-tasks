@@ -4,6 +4,8 @@
 // template<typename U>
 // class WeakPtr;
 
+#define private public
+
 template <typename T>
 class SharedPtr {
 private:
@@ -58,7 +60,7 @@ private:
     friend class WeakPtr;
 
     T* get_ptr() {
-        if (!ptr) {
+        if (dynamic_cast<FatControlBlock<T>*>(cblock) != nullptr) {
             return &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
         } else {
             return ptr;
@@ -66,8 +68,8 @@ private:
     }
     
     const T* get_ptr() const {
-        if (!ptr) {
-            return &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
+        if (dynamic_cast<const FatControlBlock<T>*>(cblock) != nullptr) {
+            return &(dynamic_cast<const FatControlBlock<T>*>(cblock) -> obj.val);
         } else {
             return ptr;
         }
@@ -88,23 +90,23 @@ private:
         cblock -> spcount--;
 
         if (cblock -> spcount == 0) {
-            if (!ptr) {
+            if (dynamic_cast<FatControlBlock<T>*>(cblock) != nullptr) {
                 (dynamic_cast<FatControlBlock<T>*>(cblock) -> obj).destroy_inside();
             } else {
                 delete ptr;
-                ptr = nullptr;
             }
-            
+
             if (cblock -> weakcount == 0) {
                 delete cblock;
             }
         }
 
         cblock = nullptr;
+        ptr = nullptr;
     }
 public:
     SharedPtr()
-    : cblock(new BaseControlBlock())
+    : cblock(new WeakControlBlock())
     , ptr(nullptr) {}
 
     SharedPtr(T* ptr) 
@@ -173,7 +175,8 @@ public:
         std::swap(cblock, other.cblock);
     }
 
-    void reset(T* new_obj) {
+    template <typename Y>
+    void reset(Y* new_obj) {
         delete_helper();
         cblock = new WeakControlBlock();
         ptr = new_obj;

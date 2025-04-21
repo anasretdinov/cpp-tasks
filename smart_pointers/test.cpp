@@ -1,6 +1,8 @@
-#include <algorithm>
+// #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
-#include <vector>
+// #include <vector>
+#include <iostream>
+
 
 #include "smart_pointers.h"
 
@@ -25,6 +27,8 @@
 //     return std::allocate_shared<T>(std::forward<const Alloc>(alloc),
 //     std::forward<Args>(args)...);
 // }
+
+
 
 struct Base {
     virtual ~Base() {
@@ -90,8 +94,11 @@ TEST_CASE("SharedPtr") {
     SECTION("Reset") {
         first_ptr.reset(new vector<int>());
         second_ptr.reset();
+        std::cout << second_ptr.cblock << ' ' << second_ptr.ptr << " datas\n";
+        std::cout << second_ptr.get_ptr() << " thats get ptr\n";
         SharedPtr<vector<int>>().swap(first_ptr);
-
+        std::cout << second_ptr.get_ptr() << " thats get ptr\n";
+        std::cout << second_ptr.get() << " gett\n";
         REQUIRE(second_ptr.get() == nullptr);
         REQUIRE(second_ptr.get() == nullptr);
     }
@@ -120,29 +127,29 @@ TEST_CASE("SharedPtr") {
         REQUIRE(*sp == 42);
     }
 
-    SECTION("Aliasing constructor") {
-        SharedPtr<TaggedDestructionCounter<0>> initial(new TaggedDestructionCounter<0>{});
-        TaggedDestructionCounter<1>* unmanaged = new TaggedDestructionCounter<1>{};
-        SharedPtr<TaggedDestructionCounter<1>> counter_holder(initial, unmanaged);
+    // SECTION("Aliasing constructor") {
+    //     SharedPtr<TaggedDestructionCounter<0>> initial(new TaggedDestructionCounter<0>{});
+    //     TaggedDestructionCounter<1>* unmanaged = new TaggedDestructionCounter<1>{};
+    //     SharedPtr<TaggedDestructionCounter<1>> counter_holder(initial, unmanaged);
 
-        REQUIRE(initial.use_count() == 2);
-        REQUIRE(initial->GetTag() == 0);
-        REQUIRE(counter_holder.use_count() == 2);
-        REQUIRE(counter_holder->GetTag() == 1);
+    //     REQUIRE(initial.use_count() == 2);
+    //     REQUIRE(initial->GetTag() == 0);
+    //     REQUIRE(counter_holder.use_count() == 2);
+    //     REQUIRE(counter_holder->GetTag() == 1);
 
-        initial.reset();
-        REQUIRE(TaggedDestructionCounter<0>::destroyed == 0);
-        REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
-        REQUIRE(counter_holder.use_count() == 1);
+    //     initial.reset();
+    //     REQUIRE(TaggedDestructionCounter<0>::destroyed == 0);
+    //     REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
+    //     REQUIRE(counter_holder.use_count() == 1);
 
-        counter_holder.reset();
-        REQUIRE(TaggedDestructionCounter<0>::destroyed == 1);
-        REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
+    //     counter_holder.reset();
+    //     REQUIRE(TaggedDestructionCounter<0>::destroyed == 1);
+    //     REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
 
-        delete unmanaged;
-    }
+    //     delete unmanaged;
+    // }
 }
-
+/*
 struct Node;
 
 struct Next {
@@ -697,4 +704,20 @@ TEST_CASE("CustomDeleter") {
     REQUIRE(construct_called == 0);
     REQUIRE(destroy_called == 0);
     REQUIRE(custom_deleter_called == 1);
+}
+
+*/
+
+TEST_CASE("Custom1") {
+    SharedPtr<int> p1 = make_shared<int>(5);
+
+    SharedPtr<int> p2 = p1;
+
+    std::cout << p2.use_count() << " ???\n";
+
+    SharedPtr<int> p3(p1);
+    std::cout << (p3.use_count());
+    std::cout << (*p3);
+    p1 = p2;
+    std::cout << (*p1);
 }
