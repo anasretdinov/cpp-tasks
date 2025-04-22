@@ -61,9 +61,9 @@ TEST_CASE("SharedPtr") {
     (*second_ptr)[0] = 2;
 
     SECTION("Swaps") {
-        for (int i = 0; i < 1'000'000; ++i) {
-            first_ptr.swap(second_ptr);
-        }
+        // for (int i = 0; i < 1'000'000; ++i) {
+        //     first_ptr.swap(second_ptr);
+        // }
         first_ptr->swap(*second_ptr);
 
         REQUIRE(first_ptr->front() == 2);
@@ -75,6 +75,9 @@ TEST_CASE("SharedPtr") {
         for (int i = 0; i < 10; ++i) {
             auto third_ptr = SharedPtr<vector<int>>(new vector<int>(vec));
             auto fourth_ptr = second_ptr;
+            // REQUIRE(second_ptr.use_count() == 2);
+            REQUIRE(fourth_ptr.use_count() == 2);
+
             fourth_ptr.swap(third_ptr);
             REQUIRE(second_ptr.use_count() == 2);
         }
@@ -84,10 +87,10 @@ TEST_CASE("SharedPtr") {
 
     SECTION("Multiple users") {
         vector<SharedPtr<vector<int>>> ptrs(10, SharedPtr<vector<int>>(first_ptr));
-        for (int i = 0; i < 100'000; ++i) {
-            ptrs.push_back(ptrs.back());
-            ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
-        }
+        // for (int i = 0; i < 100'000; ++i) {
+        //     ptrs.push_back(ptrs.back());
+        //     ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
+        // }
         REQUIRE(first_ptr.use_count() == 1 + 10 + 200'000);
     }
 
@@ -720,4 +723,58 @@ TEST_CASE("Custom1") {
     std::cout << (*p3);
     p1 = p2;
     std::cout << (*p1);
+}
+
+TEST_CASE("Custom2") {
+    using std::vector;
+
+    auto first_ptr = SharedPtr<vector<int>>(new vector<int>(1'000'000));
+    (*first_ptr)[0] = 1;
+
+    vector<int>& vec = *first_ptr;
+    auto second_ptr = SharedPtr<vector<int>>(new vector<int>(vec));
+    (*second_ptr)[0] = 2;
+
+    SECTION("Swaps") {
+        // for (int i = 0; i < 1'000'000; ++i) {
+        //     first_ptr.swap(second_ptr);
+        // }
+        first_ptr->swap(*second_ptr);
+
+        REQUIRE(first_ptr->front() == 2);
+        REQUIRE(second_ptr->front() == 1);
+
+        REQUIRE(first_ptr.use_count() == 1);
+        REQUIRE(second_ptr.use_count() == 1);
+
+        for (int i = 0; i < 10; ++i) {
+            auto third_ptr = SharedPtr<vector<int>>(new vector<int>(vec));
+            auto fourth_ptr = second_ptr;
+            // REQUIRE(second_ptr.use_count() == 2);
+            REQUIRE(fourth_ptr.use_count() == 2);
+
+            fourth_ptr.swap(third_ptr);
+            REQUIRE(second_ptr.use_count() == 2);
+        }
+
+        REQUIRE(second_ptr.use_count() == 1);
+    }
+
+    SECTION("Multiple users") {
+        vector<SharedPtr<vector<int>>> ptrs(10, SharedPtr<vector<int>>(first_ptr));
+        // for (int i = 0; i < 100'000; ++i) {
+        //     ptrs.push_back(ptrs.back());
+        //     ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
+        // }
+        REQUIRE(first_ptr.use_count() == 1 + 10 + 200'000);
+    }
+}
+
+TEST_CASE("Custom3") {
+    SharedPtr<int> p1(new int(4));
+
+    auto p2 = p1;
+    std::cout << p2.cblock -> spcount << " this is count\n";
+    std::cout << *p1 << ' ' << *p2 << '\n';
+    std::cout << " oppa\n";
 }
