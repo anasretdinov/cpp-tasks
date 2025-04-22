@@ -149,7 +149,7 @@ TEST_CASE("SharedPtr") {
     //     delete unmanaged;
     // }
 }
-/*
+
 struct Node;
 
 struct Next {
@@ -292,7 +292,7 @@ TEST_CASE("WeakPtr") {
         REQUIRE(ssp.get() == sp.get());
     }
 }
-
+/*
 struct NeitherDefaultNorCopyConstructible {
     NeitherDefaultNorCopyConstructible() = delete;
     NeitherDefaultNorCopyConstructible(const NeitherDefaultNorCopyConstructible&) = delete;

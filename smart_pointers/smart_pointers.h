@@ -112,12 +112,13 @@ public:
     SharedPtr(T* ptr) 
     : cblock(new WeakControlBlock())
     , ptr(ptr) {}
-
+    
     SharedPtr(const SharedPtr& other) 
     : cblock(other.cblock)
     , ptr(other.ptr) {
         cblock -> spcount++;
     }
+
 
     ~SharedPtr() {
         delete_helper();
@@ -202,6 +203,8 @@ private:
     SharedPtr<T>::BaseControlBlock* cblock = nullptr;
     T* ptr = nullptr;
 public:
+    WeakPtr() {} // default vals
+
     WeakPtr(const SharedPtr<T>& sp) 
     : cblock(sp.cblock)
     , ptr(sp.ptr) {
@@ -230,6 +233,12 @@ public:
             cblock = nullptr;
         }
     }
+
+    long use_count() const {
+        return cblock -> spcount;
+    }
+
+
 };
 
 template <typename>
