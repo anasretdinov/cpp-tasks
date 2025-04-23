@@ -17,6 +17,71 @@ struct BaseControlBlock {
 template<typename T>
 class SharedPtr {
 private:
+
+    template<typename U>
+    union DataHolder {
+        U val;
+
+        DataHolder() {};
+        ~DataHolder() {};
+
+        void destroy_inside() {
+            val.~U();
+        }
+    };
+
+    struct WeakControlBlock : BaseControlBlock {
+        
+    };
+
+    template<typename U>
+    struct FatControlBlock : BaseControlBlock {
+        DataHolder<U> obj;
+
+        template<typename... Args>
+        FatControlBlock(Args&&... args) {
+            new (&obj.val) U(std::forward<Args>(args)...);
+        }
+
+        ~FatControlBlock() = default;
+    };
+
+    BaseControlBlock* cblock = nullptr;
+    T* ptr = nullptr;
+
+    SharedPtr(BaseControlBlock* cb, T* ptr)
+    : cblock(cb)
+    , ptr(ptr) {
+        cb -> spcount++;
+        std::cout << "Private constructor\n";
+        std::cerr << "Private constructor\n";
+    }
+
+    void delete_helper() {
+        std::cout << " delete helper called\n";
+        if (!cblock) {
+            // типа мувнули/что-то еще
+            return;
+        }
+        cblock -> spcount--;
+
+        if (cblock -> spcount == 0) {
+            if (dynamic_cast<FatControlBlock<T>*>(cblock) != nullptr) {
+                (dynamic_cast<FatControlBlock<T>*>(cblock) -> obj).destroy_inside();
+            } else {
+                delete ptr;
+            }
+
+            if (cblock -> weakcount == 0) {
+                std::cout << " allahacbar\n";
+                delete cblock;
+            }
+        }
+
+        cblock = nullptr;
+        ptr = nullptr;
+    }
+private:
     int value; // Просто число для примера
 
     // Генерация случайного числа
@@ -27,8 +92,10 @@ private:
     }
 
 public:
-    // Пустой конструктор
-    SharedPtr() {
+    SharedPtr()
+    : cblock(new WeakControlBlock())
+    , ptr(nullptr) {
+        cblock -> spcount++;
         value = generateRandomValue();
         std::cout << "Default constructor, random value = " << value << "\n";
     }
@@ -72,5 +139,6 @@ public:
     // Деструктор
     ~SharedPtr() {
         std::cout << "Destructor, value = " << value << "\n";
+        delete_helper();
     }
 };
