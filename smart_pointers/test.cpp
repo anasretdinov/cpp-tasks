@@ -4,8 +4,8 @@
 #include <iostream>
 
 
-#include "amogus.h"
-/*
+#include "smart_pointers.h"
+
 // #include <memory>
 
 // template <typename T>
@@ -87,10 +87,10 @@ TEST_CASE("SharedPtr") {
 
     SECTION("Multiple users") {
         vector<SharedPtr<vector<int>>> ptrs(10, SharedPtr<vector<int>>(first_ptr));
-        // for (int i = 0; i < 100'000; ++i) {
-        //     ptrs.push_back(ptrs.back());
-        //     ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
-        // }
+        for (int i = 0; i < 100'000; ++i) {
+            ptrs.push_back(ptrs.back());
+            ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
+        }
         REQUIRE(first_ptr.use_count() == 1 + 10 + 200'000);
     }
 
@@ -219,7 +219,10 @@ TEST_CASE("WeakPtr") {
             weak = shared;
             REQUIRE(weak.use_count() == 1);
             REQUIRE(!weak.expired());
+            // std::cout << weak.use_count() << " uc\n";
         }
+        // std::cout << weak.cblock << " cblock ptr\n";
+        // std::cout << weak.use_count() << " uc\n";
         REQUIRE(weak.use_count() == 0);
         REQUIRE(weak.expired());
     }
@@ -295,7 +298,7 @@ TEST_CASE("WeakPtr") {
         REQUIRE(ssp.get() == sp.get());
     }
 }
-
+/*
 struct NeitherDefaultNorCopyConstructible {
     NeitherDefaultNorCopyConstructible() = delete;
     NeitherDefaultNorCopyConstructible(const NeitherDefaultNorCopyConstructible&) = delete;

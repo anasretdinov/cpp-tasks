@@ -269,6 +269,7 @@ private:
     T* ptr = nullptr;
 
     void delete_helper() {
+        ptr = nullptr; // не наша забота
         if (!cblock) return;
         cblock -> weakcount--;
         if (cblock -> weakcount == 0 && expired()) {
@@ -330,6 +331,42 @@ public:
         return *this;
     }
 
+    template <typename Y>
+    WeakPtr(WeakPtr<Y>&& other)
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
+        other.cblock = nullptr;
+        other.ptr = nullptr;
+    }
+
+    WeakPtr(WeakPtr&& other)
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
+        std::cout << " there1\n";
+        other.cblock = nullptr;
+        other.ptr = nullptr;
+    }
+
+    template <typename Y>
+    WeakPtr& operator=(WeakPtr<Y>&& other) {
+        delete_helper();
+        cblock = other.cblock;
+        ptr = other.ptr;
+        other.cblock = nullptr;
+        other.ptr = nullptr;
+        return *this;
+    }
+
+    WeakPtr& operator=(WeakPtr&& other) {
+        delete_helper();
+        cblock = other.cblock;
+        ptr = other.ptr;
+        other.cblock = nullptr;
+        other.ptr = nullptr;
+        return *this;
+    }
+
+
     bool expired() const noexcept {
         return (!cblock || cblock -> spcount == 0);
     }
@@ -347,6 +384,10 @@ public:
     }
 
     long use_count() const {
+        if (!cblock) {
+            // допустим, мувнули
+            return 0;
+        }
         return cblock -> spcount;
     }
 
