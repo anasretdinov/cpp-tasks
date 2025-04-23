@@ -85,6 +85,7 @@ private:
     , ptr(ptr) {
         cb -> spcount++;
         std::cout << "Private constructor\n";
+        std::cerr << "Private constructor\n";
     }
 
 
@@ -118,6 +119,7 @@ public:
     , ptr(nullptr) {
         cblock -> spcount++;
         std::cerr << "Empty constructor\n";
+        std::cout << "Empty constructor\n";
     }
 
     template<typename Y>
@@ -126,6 +128,8 @@ public:
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
         std::cerr << "From ptr consttuctor\n";
+        std::cout << "From ptr consttuctor\n";
+
     }
     
     template <typename Y>
@@ -134,6 +138,7 @@ public:
     : cblock(other.cblock)
     , ptr(other.ptr) {
         std::cerr << "Copy constructor called\n";
+        std::cout << "Copy constructor called\n";
         cblock -> spcount++;
     }
 
@@ -146,6 +151,8 @@ public:
     : cblock(other.cblock) 
     , ptr(other.ptr) {
         std::cerr << "Move constructor called\n";
+        std::cout << "Move constructor called\n";
+
         other.cblock = nullptr;
         other.ptr = nullptr;
     }
@@ -153,6 +160,8 @@ public:
     template <typename Y>
     SharedPtr& operator=(const SharedPtr<Y>& other) {
         std::cerr << "Operator= called\n";
+        std::cout << "Operator= called\n";
+
         if (this == &other) {
             return *this;
         }
@@ -166,6 +175,8 @@ public:
     template <typename Y>
     SharedPtr& operator=(SharedPtr<Y>&& other) {
         std::cerr << "Move operator= called\n";
+        std::cout << "Move operator= called\n";
+
         // this->swap(other); TODO 
         delete_helper();
         cblock = other.cblock;
@@ -224,7 +235,7 @@ public:
 
 template<typename T, typename... Args>
 SharedPtr<T> make_shared(Args&&... args) {
-    return SharedPtr<T>(new typename SharedPtr<T>::FatControlBlock<T>(std::forward<Args>(args)...), nullptr);
+    return SharedPtr<T>(new typename SharedPtr<T>::template FatControlBlock<T>(std::forward<Args>(args)...), nullptr);
 }
 
 template <typename T>

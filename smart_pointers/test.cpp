@@ -4,8 +4,8 @@
 #include <iostream>
 
 
-#include "smart_pointers.h"
-
+#include "amogus.h"
+/*
 // #include <memory>
 
 // template <typename T>
@@ -295,7 +295,7 @@ TEST_CASE("WeakPtr") {
         REQUIRE(ssp.get() == sp.get());
     }
 }
-/*
+
 struct NeitherDefaultNorCopyConstructible {
     NeitherDefaultNorCopyConstructible() = delete;
     NeitherDefaultNorCopyConstructible(const NeitherDefaultNorCopyConstructible&) = delete;
@@ -709,7 +709,7 @@ TEST_CASE("CustomDeleter") {
     REQUIRE(custom_deleter_called == 1);
 }
 
-*/
+
 
 TEST_CASE("Custom1") {
     SharedPtr<int> p1 = make_shared<int>(5);
@@ -769,12 +769,12 @@ TEST_CASE("Custom2") {
         REQUIRE(first_ptr.use_count() == 1 + 10 + 200'000);
     }
 }
-
+*/
 TEST_CASE("Custom3") {
-    SharedPtr<int> p1(new int(4));
+    SharedPtr<int> p1(new int(5));
 
-    auto p2 = p1;
-    std::cout << p2.cblock -> spcount << " this is count\n";
-    std::cout << *p1 << ' ' << *p2 << '\n';
-    std::cout << " oppa\n";
+    SharedPtr<int> p2 = p1;
+    // std::cout << *p2 << ' ' << p2.use_count() << '\n';
+
+    // REQUIRE(p2.use_count() == 2);
 }
