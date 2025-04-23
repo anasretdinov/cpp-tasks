@@ -84,13 +84,10 @@ private:
     : cblock(cb)
     , ptr(ptr) {
         cb -> spcount++;
-        std::cout << "Private constructor\n";
-        std::cerr << "Private constructor\n";
     }
 
 
     void delete_helper() {
-        std::cout << " delete helper called\n";
         if (!cblock) {
             // типа мувнули/что-то еще
             return;
@@ -105,7 +102,6 @@ private:
             }
 
             if (cblock -> weakcount == 0) {
-                std::cout << " allahacbar\n";
                 delete cblock;
             }
         }
@@ -118,8 +114,6 @@ public:
     : cblock(new WeakControlBlock())
     , ptr(nullptr) {
         cblock -> spcount++;
-        std::cerr << "Empty constructor\n";
-        std::cout << "Empty constructor\n";
     }
 
     template<typename Y>
@@ -127,18 +121,18 @@ public:
     : cblock(new WeakControlBlock())
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
-        std::cerr << "From ptr consttuctor\n";
-        std::cout << "From ptr consttuctor\n";
-
     }
     
     template <typename Y>
-    // requires std::convertible_to<U, T>
     SharedPtr(const SharedPtr<Y>& other) 
     : cblock(other.cblock)
     , ptr(other.ptr) {
-        std::cerr << "Copy constructor called\n";
-        std::cout << "Copy constructor called\n";
+        cblock -> spcount++;
+    }
+
+    SharedPtr(const SharedPtr& other)
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
         cblock -> spcount++;
     }
 
@@ -150,8 +144,6 @@ public:
     SharedPtr(SharedPtr<Y>&& other) 
     : cblock(other.cblock) 
     , ptr(other.ptr) {
-        std::cerr << "Move constructor called\n";
-        std::cout << "Move constructor called\n";
 
         other.cblock = nullptr;
         other.ptr = nullptr;
@@ -159,8 +151,6 @@ public:
 
     template <typename Y>
     SharedPtr& operator=(const SharedPtr<Y>& other) {
-        std::cerr << "Operator= called\n";
-        std::cout << "Operator= called\n";
 
         if (this == &other) {
             return *this;
@@ -174,9 +164,6 @@ public:
 
     template <typename Y>
     SharedPtr& operator=(SharedPtr<Y>&& other) {
-        std::cerr << "Move operator= called\n";
-        std::cout << "Move operator= called\n";
-
         // this->swap(other); TODO 
         delete_helper();
         cblock = other.cblock;
