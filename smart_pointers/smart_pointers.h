@@ -88,6 +88,7 @@ private:
 
 
     void delete_helper() {
+        // std::cout << " this is delete helper\n";
         if (!cblock) {
             // типа мувнули/что-то еще
             return;
@@ -95,13 +96,16 @@ private:
         cblock -> spcount--;
 
         if (cblock -> spcount == 0) {
+            // std::cout << " opa opa\n";
             if (dynamic_cast<FatControlBlock<T>*>(cblock) != nullptr) {
+                // std::cout << " destroy inside???\n";
                 (dynamic_cast<FatControlBlock<T>*>(cblock) -> obj).destroy_inside();
             } else {
                 delete ptr;
             }
 
             if (cblock -> weakcount == 0) {
+                // std::cout << "opa opa\n";
                 delete cblock;
             }
         }
@@ -173,6 +177,39 @@ public:
         return *this;
     }
 
+    // Move-конструктор
+    SharedPtr(SharedPtr&& other)
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
+        other.cblock = nullptr;
+        other.ptr = nullptr;
+    }
+
+    // Копирующий оператор присваивания
+    SharedPtr& operator=(const SharedPtr& other) {
+        if (this == &other) {
+            return *this;
+        }
+        delete_helper();
+        cblock = other.cblock;
+        ptr = other.ptr;
+        if (cblock) {
+            cblock->spcount++;
+        }
+        return *this;
+    }
+
+    // Move-оператор присваивания
+    SharedPtr& operator=(SharedPtr&& other) {
+        delete_helper();
+        cblock = other.cblock;
+        ptr = other.ptr;
+        other.cblock = nullptr;
+        other.ptr = nullptr;
+        return *this;
+    }
+
+
     void random_non_const() {
         (this -> operator*())++;
         std::cout << " random non const\n";
@@ -230,6 +267,16 @@ class WeakPtr {
 private:
     BaseControlBlock* cblock = nullptr;
     T* ptr = nullptr;
+
+    void delete_helper() {
+        if (!cblock) return;
+        cblock -> weakcount--;
+        if (cblock -> weakcount == 0 && expired()) {
+            // тогда надо совсем все сносить
+            delete cblock;
+            cblock = nullptr;
+        }
+    }
 public:
     WeakPtr() {} // default vals
 
@@ -247,6 +294,42 @@ public:
         cblock -> weakcount++;
     }
 
+    WeakPtr(const WeakPtr& other)
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
+        cblock -> weakcount++;
+    }
+
+    template <typename Y>
+    WeakPtr& operator=(const WeakPtr<Y>& other) {
+        // std::cout << " weak operator= called\n";
+        if (this == &other) {
+            return *this;
+        }
+        delete_helper();
+
+        cblock = other.cblock;
+        ptr = other.ptr;
+
+        cblock -> weakcount++;
+        return *this;
+    }
+
+
+    WeakPtr& operator=(const WeakPtr& other) {
+        // std::cout << " weak operator= called\n";
+        if (this == &other) {
+            return *this;
+        }
+        delete_helper();
+
+        cblock = other.cblock;
+        ptr = other.ptr;
+
+        cblock -> weakcount++;
+        return *this;
+    }
+
     bool expired() const noexcept {
         return (!cblock || cblock -> spcount == 0);
     }
@@ -260,13 +343,7 @@ public:
     }
 
     ~WeakPtr() {
-        if (!cblock) return;
-        cblock -> weakcount--;
-        if (cblock -> weakcount == 0 && expired()) {
-            // тогда надо совсем все сносить
-            delete cblock;
-            cblock = nullptr;
-        }
+        delete_helper();
     }
 
     long use_count() const {
