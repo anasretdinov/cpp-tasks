@@ -97,10 +97,10 @@ TEST_CASE("SharedPtr") {
     SECTION("Reset") {
         first_ptr.reset(new vector<int>());
         second_ptr.reset();
-        std::cout << second_ptr.cblock << ' ' << second_ptr.ptr << " datas\n";
-        std::cout << second_ptr.get_ptr() << " thats get ptr\n";
+        // std::cout << second_ptr.cblock << ' ' << second_ptr.ptr << " datas\n";
+        // std::cout << second_ptr.get_ptr() << " thats get ptr\n";
         SharedPtr<vector<int>>().swap(first_ptr);
-        std::cout << second_ptr.get_ptr() << " thats get ptr\n";
+        // std::cout << second_ptr.get_ptr() << " thats get ptr\n";
         std::cout << second_ptr.get() << " gett\n";
         REQUIRE(second_ptr.get() == nullptr);
         REQUIRE(second_ptr.get() == nullptr);
@@ -130,27 +130,34 @@ TEST_CASE("SharedPtr") {
         REQUIRE(*sp == 42);
     }
 
-    // SECTION("Aliasing constructor") {
-    //     SharedPtr<TaggedDestructionCounter<0>> initial(new TaggedDestructionCounter<0>{});
-    //     TaggedDestructionCounter<1>* unmanaged = new TaggedDestructionCounter<1>{};
-    //     SharedPtr<TaggedDestructionCounter<1>> counter_holder(initial, unmanaged);
+    SECTION("Aliasing constructor") {
+        std::cout << std::string(75, '=') << '\n';
 
-    //     REQUIRE(initial.use_count() == 2);
-    //     REQUIRE(initial->GetTag() == 0);
-    //     REQUIRE(counter_holder.use_count() == 2);
-    //     REQUIRE(counter_holder->GetTag() == 1);
+        SharedPtr<TaggedDestructionCounter<0>> initial(new TaggedDestructionCounter<0>{});
+        TaggedDestructionCounter<1>* unmanaged = new TaggedDestructionCounter<1>{};
+        SharedPtr<TaggedDestructionCounter<1>> counter_holder(initial, unmanaged);
+        std::cout << std::string(75, '=') << '\n';
 
-    //     initial.reset();
-    //     REQUIRE(TaggedDestructionCounter<0>::destroyed == 0);
-    //     REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
-    //     REQUIRE(counter_holder.use_count() == 1);
+        REQUIRE(initial.use_count() == 2);
+        REQUIRE(initial->GetTag() == 0);
+        REQUIRE(counter_holder.use_count() == 2);
+        REQUIRE(counter_holder->GetTag() == 1);
+        std::cout << std::string(75, '=') << '\n';
 
-    //     counter_holder.reset();
-    //     REQUIRE(TaggedDestructionCounter<0>::destroyed == 1);
-    //     REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
+        initial.reset();
+        std::cout << std::string(75, '=') << '\n';
+        REQUIRE(TaggedDestructionCounter<0>::destroyed == 0);
+        REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
+        REQUIRE(counter_holder.use_count() == 1);
+        std::cout << std::string(75, '=') << '\n';
 
-    //     delete unmanaged;
-    // }
+        counter_holder.reset();
+        std::cout << std::string(75, '=') << '\n';
+        REQUIRE(TaggedDestructionCounter<0>::destroyed == 1);
+        REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
+
+        delete unmanaged;
+    }
 }
 
 struct Node;
@@ -298,7 +305,7 @@ TEST_CASE("WeakPtr") {
         REQUIRE(ssp.get() == sp.get());
     }
 }
-/*
+
 struct NeitherDefaultNorCopyConstructible {
     NeitherDefaultNorCopyConstructible() = delete;
     NeitherDefaultNorCopyConstructible(const NeitherDefaultNorCopyConstructible&) = delete;
@@ -461,7 +468,7 @@ TEST_CASE("[Allocate|Make]Shared") {
         REQUIRE(new_called == 1);
         REQUIRE(delete_called == 1);
     }
-
+/*
     SECTION("AllocatedShared, MoveOnly") {
         new_called = 0;
         delete_called = 0;
@@ -531,8 +538,9 @@ TEST_CASE("[Allocate|Make]Shared") {
         REQUIRE(new_called == 0);
         REQUIRE(delete_called == 0);
     }
+    */
 }
-
+/*
 struct Enabled : public EnableSharedFromThis<Enabled> {
     SharedPtr<Enabled> get_shared() {
         return shared_from_this();
