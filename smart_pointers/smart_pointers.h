@@ -140,6 +140,16 @@ public:
         cblock -> spcount++;
     }
 
+    // Aliasing constructor
+    template <typename Y>
+    SharedPtr(const SharedPtr<Y>& other, T* ptr) 
+    : cblock(other.cblock)
+    , ptr(ptr) {
+        cblock -> spcount++;
+    }
+
+
+
     ~SharedPtr() {
         delete_helper();
     }
@@ -258,7 +268,7 @@ public:
 };
 
 template<typename T, typename... Args>
-SharedPtr<T> make_shared(Args&&... args) {
+SharedPtr<T> makeShared(Args&&... args) {
     return SharedPtr<T>(new typename SharedPtr<T>::template FatControlBlock<T>(std::forward<Args>(args)...), nullptr);
 }
 
@@ -394,8 +404,9 @@ public:
 
 };
 
-template <typename>
+template <typename T>
 class EnableSharedFromThis {
+    SharedPtr<T> shared_from_this() {
 
-    // YOUR CODE HERE
+    }
 };
