@@ -1,11 +1,6 @@
-/// TODO: fix problems with  BaseCB constructor (set tp zero) 
-
 
 #include <memory>
 #include <type_traits>
-// #include <allocator>
-// template<typename U>
-// class WeakPtr;
 
 #define private public
 
@@ -416,6 +411,7 @@ public:
 
 template <typename T>
 class EnableSharedFromThis {
+public:
     SharedPtr<T> shared_from_this() {
 
     }
