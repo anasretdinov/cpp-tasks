@@ -35,7 +35,8 @@ struct WeakControlBlock : BaseControlBlock {
     }
 };
 
-template<typename T, typename Alloc>
+// template<typename T, typename Alloc = std::allocator> // здесь в alloc придет уже аккуратный тип, прогнанный через rebind 
+template <typename T>
 struct FatControlBlock : BaseControlBlock {
     template<typename U>
     union DataHolder {
@@ -48,15 +49,17 @@ struct FatControlBlock : BaseControlBlock {
             val.~U();
         }
     };
+
+    // [[no_unique_address]] Alloc alloc;
     DataHolder<T> obj;
 
-    
 
     template<typename... Args>
     FatControlBlock(Args&&... args) {
         new (&obj.val) T(std::forward<Args>(args)...);
     }
 
+    // Alloc get_allocator
     void delete_inside() override {
         obj.destroy_inside();
     }
@@ -122,7 +125,6 @@ private:
             ptr = &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);    
         }
     }
-
 
     void delete_helper() {
         ptr = nullptr;
@@ -293,8 +295,23 @@ public:
 
 template<typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
-    return SharedPtr<T>(new typename SharedPtr<T>::template FatControlBlock<T>(std::forward<Args>(args)...));
+    return SharedPtr<T>(dynamic_cast<BaseControlBlock*>(new FatControlBlock<T>(std::forward<Args>(args)...)));
 }
+
+// template<typename T, typename Alloc, typename... Args>
+// SharedPtr<T> allocateShared(const Alloc& alloc, Args&&... args) {
+//     using alloc_traits = std::allocator_traits<Alloc>;
+//     using CB_alloc_traits = typename alloc_traits::template rebind_alloc<FatControlBlock<T>>;
+//     using CB_alloc_type = typename alloc_traits::template rebind_traits<FatControlBlock<T>>;
+
+//     CB_alloc_type allocator = alloc;
+
+//     FatControlBlock<T>* place = CB_alloc_traits::allocate(allocator, 1);
+//     CB_alloc_traits
+
+
+// }
+
 
 template <typename T>
 class WeakPtr {
