@@ -238,12 +238,12 @@ TEST_CASE("WeakPtr") {
         auto wp = weak;
         REQUIRE(weak.use_count() == 1);
         REQUIRE(wp.use_count() == 1);
-
+        std::cout << " aliveee\n";
         auto wwp = std::move(weak);
         REQUIRE(wwp.use_count() == 1);
         REQUIRE(weak.use_count() == 0);
         REQUIRE(weak.expired());
-
+        std::cout << dynamic_cast<WeakControlBlock<int>*>(sp.cblock) << "progrev \n";
         auto ssp = wwp.lock();
         REQUIRE(sp.use_count() == 2);
         REQUIRE(ssp.get() == sp.get());
@@ -285,12 +285,20 @@ TEST_CASE("WeakPtr") {
         WeakPtr<Base> wbsp = dsp;
         WeakPtr<Base> wwbsp = wdsp;
 
+        // std::cout << dynamic_cast<WeakControlBlock<Base>*>(bsp.cblock) -> ptr << " ???\n";
+        // std::cout << dynamic_cast<WeakControlBlock<Derived>*>(wdsp.cblock) -> ptr << " ???\n";
+        // std::cout << dynamic_cast<WeakControlBlock<Base>*>(wbsp.cblock) -> ptr << " ???\n";
+        // std::cout << dynamic_cast<WeakControlBlock<Base>*>(wwbsp.cblock) -> ptr << " ???\n";
+
+
         REQUIRE(dsp.use_count() == 2);
 
         bsp = std::move(dsp);
         REQUIRE(bsp.use_count() == 1);
 
         bsp.reset();
+        std::cout << " blyat \n";
+
         REQUIRE(wdsp.expired());
         REQUIRE(wbsp.expired());
         REQUIRE(wwbsp.expired());
