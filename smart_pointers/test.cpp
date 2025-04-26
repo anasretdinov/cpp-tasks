@@ -731,7 +731,7 @@ TEST_CASE("CustomDeleter") {
 
 */
 TEST_CASE("Custom1") {
-    SharedPtr<int> p1 = make_shared<int>(5);
+    SharedPtr<int> p1 = makeShared<int>(5);
 
     SharedPtr<int> p2 = p1;
 
@@ -781,14 +781,14 @@ TEST_CASE("Custom2") {
 
     SECTION("Multiple users") {
         vector<SharedPtr<vector<int>>> ptrs(10, SharedPtr<vector<int>>(first_ptr));
-        // for (int i = 0; i < 100'000; ++i) {
-        //     ptrs.push_back(ptrs.back());
-        //     ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
-        // }
+        for (int i = 0; i < 100'000; ++i) {
+            ptrs.push_back(ptrs.back());
+            ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
+        }
         REQUIRE(first_ptr.use_count() == 1 + 10 + 200'000);
     }
 }
-*/
+
 TEST_CASE("Custom3") {
     SharedPtr<int> p1(new int(5));
 
