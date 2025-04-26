@@ -35,7 +35,7 @@ struct WeakControlBlock : BaseControlBlock {
     }
 };
 
-template<typename T>
+template<typename T, typename Alloc>
 struct FatControlBlock : BaseControlBlock {
     template<typename U>
     union DataHolder {
@@ -49,6 +49,8 @@ struct FatControlBlock : BaseControlBlock {
         }
     };
     DataHolder<T> obj;
+
+    
 
     template<typename... Args>
     FatControlBlock(Args&&... args) {
