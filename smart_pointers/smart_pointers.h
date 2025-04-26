@@ -93,7 +93,6 @@ struct FatControlBlock : BaseControlBlock {
         obj.destroy_inside();
     }
 
-
     void destroy() override {
 
         Allocator al = a;
@@ -136,28 +135,31 @@ private:
     friend class WeakPtr;
 
     T* get_ptr() {
-        if (ptr) {
-            return ptr;
-        }
-        auto cblock_casted = dynamic_cast<FatControlBlock<T>*>(cblock);
-        if (cblock_casted == nullptr) {
-            return nullptr;
-        } else {
-            return &(cblock_casted -> obj.val);
-        }
+
+        return ptr;
+
+        // if (ptr) {
+        //     return ptr;
+        // }
+        // auto cblock_casted = dynamic_cast<FatControlBlock<T>*>(cblock);
+        // if (cblock_casted == nullptr) {
+        //     return nullptr;
+        // } else {
+        //     return &(cblock_casted -> obj.val);
+        // }
     }
     
     const T* get_ptr() const {
-
-        if (ptr) {
-            return ptr;
-        }
-        auto cblock_casted = dynamic_cast<FatControlBlock<T>*>(cblock);
-        if (cblock_casted == nullptr) {
-            return nullptr;
-        } else {
-            return &(cblock_casted -> obj.val);
-        }
+        return ptr;
+        // if (ptr) {
+        //     return ptr;
+        // }
+        // auto cblock_casted = dynamic_cast<FatControlBlock<T>*>(cblock);
+        // if (cblock_casted == nullptr) {
+        //     return nullptr;
+        // } else {
+        //     return &(cblock_casted -> obj.val);
+        // }
     }
 
     void delete_helper() {
@@ -372,7 +374,7 @@ SharedPtr<T> makeShared(Args&&... args) {
     std::allocator<FatControlBlock<T, std::allocator<std::byte>>> al;
     auto mem = al.allocate(1);
     to_return.cblock = new (mem) FatControlBlock<T, std::allocator<std::byte>>(std::forward<Args>(args)...);
-    to_return.ptr = to_return.get_ptr();
+    to_return.ptr = &(dynamic_cast<FatControlBlock<T, std::allocator<std::byte>>*>(to_return.cblock) -> obj.val);
     to_return.cblock -> spcount++;
 
     if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
