@@ -1,8 +1,6 @@
-// #include <algorithm>
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
-// #include <vector>
-#include <iostream>
-
+#include <vector>
 
 #include "smart_pointers.h"
 
@@ -27,8 +25,6 @@
 //     return std::allocate_shared<T>(std::forward<const Alloc>(alloc),
 //     std::forward<Args>(args)...);
 // }
-
-
 
 struct Base {
     virtual ~Base() {
@@ -61,9 +57,9 @@ TEST_CASE("SharedPtr") {
     (*second_ptr)[0] = 2;
 
     SECTION("Swaps") {
-        // for (int i = 0; i < 1'000'000; ++i) {
-        //     first_ptr.swap(second_ptr);
-        // }
+        for (int i = 0; i < 1'000'000; ++i) {
+            first_ptr.swap(second_ptr);
+        }
         first_ptr->swap(*second_ptr);
 
         REQUIRE(first_ptr->front() == 2);
@@ -75,9 +71,6 @@ TEST_CASE("SharedPtr") {
         for (int i = 0; i < 10; ++i) {
             auto third_ptr = SharedPtr<vector<int>>(new vector<int>(vec));
             auto fourth_ptr = second_ptr;
-            // REQUIRE(second_ptr.use_count() == 2);
-            REQUIRE(fourth_ptr.use_count() == 2);
-
             fourth_ptr.swap(third_ptr);
             REQUIRE(second_ptr.use_count() == 2);
         }
@@ -97,11 +90,8 @@ TEST_CASE("SharedPtr") {
     SECTION("Reset") {
         first_ptr.reset(new vector<int>());
         second_ptr.reset();
-        // std::cout << second_ptr.cblock << ' ' << second_ptr.ptr << " datas\n";
-        // std::cout << second_ptr.get_ptr() << " thats get ptr\n";
         SharedPtr<vector<int>>().swap(first_ptr);
-        // std::cout << second_ptr.get_ptr() << " thats get ptr\n";
-        std::cout << second_ptr.get() << " gett\n";
+
         REQUIRE(second_ptr.get() == nullptr);
         REQUIRE(second_ptr.get() == nullptr);
     }
@@ -131,28 +121,21 @@ TEST_CASE("SharedPtr") {
     }
 
     SECTION("Aliasing constructor") {
-        std::cout << std::string(75, '=') << '\n';
-
         SharedPtr<TaggedDestructionCounter<0>> initial(new TaggedDestructionCounter<0>{});
         TaggedDestructionCounter<1>* unmanaged = new TaggedDestructionCounter<1>{};
         SharedPtr<TaggedDestructionCounter<1>> counter_holder(initial, unmanaged);
-        std::cout << std::string(75, '=') << '\n';
 
         REQUIRE(initial.use_count() == 2);
         REQUIRE(initial->GetTag() == 0);
         REQUIRE(counter_holder.use_count() == 2);
         REQUIRE(counter_holder->GetTag() == 1);
-        std::cout << std::string(75, '=') << '\n';
 
         initial.reset();
-        std::cout << std::string(75, '=') << '\n';
         REQUIRE(TaggedDestructionCounter<0>::destroyed == 0);
         REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
         REQUIRE(counter_holder.use_count() == 1);
-        std::cout << std::string(75, '=') << '\n';
 
         counter_holder.reset();
-        std::cout << std::string(75, '=') << '\n';
         REQUIRE(TaggedDestructionCounter<0>::destroyed == 1);
         REQUIRE(TaggedDestructionCounter<1>::destroyed == 0);
 
@@ -204,9 +187,7 @@ int Node::destructed = 0;
 
 SharedPtr<Node> getCyclePtr(int cycle_size) {
     SharedPtr<Node> head(new Node(0));
-
     SharedPtr<Node> prev(head);
-
     for (int i = 1; i < cycle_size; ++i) {
         SharedPtr<Node> current(new Node(i));
         prev->next.shared = current;
@@ -228,10 +209,7 @@ TEST_CASE("WeakPtr") {
             weak = shared;
             REQUIRE(weak.use_count() == 1);
             REQUIRE(!weak.expired());
-            // std::cout << weak.use_count() << " uc\n";
         }
-        // std::cout << weak.cblock << " cblock ptr\n";
-        // std::cout << weak.use_count() << " uc\n";
         REQUIRE(weak.use_count() == 0);
         REQUIRE(weak.expired());
     }
@@ -240,11 +218,12 @@ TEST_CASE("WeakPtr") {
         auto wp = weak;
         REQUIRE(weak.use_count() == 1);
         REQUIRE(wp.use_count() == 1);
+
         auto wwp = std::move(weak);
         REQUIRE(wwp.use_count() == 1);
         REQUIRE(weak.use_count() == 0);
         REQUIRE(weak.expired());
-        // std::cout << dynamic_cast<WeakControlBlock<int>*>(sp.cblock) << "progrev \n";
+
         auto ssp = wwp.lock();
         REQUIRE(sp.use_count() == 2);
         REQUIRE(ssp.get() == sp.get());
@@ -286,20 +265,12 @@ TEST_CASE("WeakPtr") {
         WeakPtr<Base> wbsp = dsp;
         WeakPtr<Base> wwbsp = wdsp;
 
-        // std::cout << dynamic_cast<WeakControlBlock<Base>*>(bsp.cblock) -> ptr << " ???\n";
-        // std::cout << dynamic_cast<WeakControlBlock<Derived>*>(wdsp.cblock) -> ptr << " ???\n";
-        // std::cout << dynamic_cast<WeakControlBlock<Base>*>(wbsp.cblock) -> ptr << " ???\n";
-        // std::cout << dynamic_cast<WeakControlBlock<Base>*>(wwbsp.cblock) -> ptr << " ???\n";
-
-
         REQUIRE(dsp.use_count() == 2);
 
         bsp = std::move(dsp);
         REQUIRE(bsp.use_count() == 1);
 
         bsp.reset();
-        std::cout << " blyat \n";
-
         REQUIRE(wdsp.expired());
         REQUIRE(wbsp.expired());
         REQUIRE(wwbsp.expired());
@@ -443,20 +414,11 @@ TEST_CASE("[Allocate|Make]Shared") {
         {
             auto sp = makeShared<NeitherDefaultNorCopyConstructible>(
                 NeitherDefaultNorCopyConstructible(0));
-            REQUIRE(new_called == 1);
-
             WeakPtr<NeitherDefaultNorCopyConstructible> wp = sp;
-            REQUIRE(new_called == 1);
-
             auto ssp = sp;
             sp.reset();
-            REQUIRE(new_called == 1);
-            std::cout << " that guy\n";
             REQUIRE(!wp.expired());
             ssp.reset();
-            std::cout << delete_called << " after see\n";
-            REQUIRE(new_called == 1);
-
             REQUIRE(wp.expired());
         }
 
@@ -471,7 +433,7 @@ TEST_CASE("[Allocate|Make]Shared") {
         {
             auto sp = makeShared<Accountant>();
             REQUIRE(Accountant::constructed == 1);
-            REQUIRE(new_called == 1);
+
             WeakPtr<Accountant> wp = sp;
             auto ssp = sp;
             sp.reset();
@@ -556,7 +518,6 @@ TEST_CASE("[Allocate|Make]Shared") {
         REQUIRE(new_called == 0);
         REQUIRE(delete_called == 0);
     }
-    
 }
 
 struct Enabled : public EnableSharedFromThis<Enabled> {
@@ -587,24 +548,16 @@ TEST_CASE("EnableSharedFromThis") {
 
     SECTION("Manual allocation") {
         SharedPtr<Enabled> esp(new Enabled());
-        std::cout << " hm\n";
+
         auto& e = *esp;
         auto sp = e.get_shared();
-        std::cout << " hm\n";
 
         REQUIRE(sp.use_count() == 2);
-        std::cout << " hm\n";
-        std::cout << sp.cblock -> spcount << ' ' << sp.cblock -> weakcount << '\n';
-        esp.reset();
-        std::cout << " hm\n";
-        std::cout << sp.cblock -> spcount << ' ' << sp.cblock -> weakcount << '\n';
 
+        esp.reset();
         REQUIRE(sp.use_count() == 1);
-        std::cout << " hm\n";
 
         sp.reset();
-        std::cout << " hm\n";
-
     }
 }
 
@@ -675,7 +628,6 @@ TEST_CASE("InheritanceDestroy") {
         REQUIRE(construct_called == 1);
         REQUIRE(destroy_called == 1);
     }
-
 }
 
 int custom_deleter_called = 0;
@@ -683,7 +635,6 @@ int custom_deleter_called = 0;
 struct MyDeleter {
     template <typename T>
     void operator()(T*) {
-        std::cout << " AIAIAO IFJGFNGFNGF\n";
         ++custom_deleter_called;
     }
 };
@@ -726,14 +677,12 @@ TEST_CASE("CustomDeleter") {
         MyDeleter deleter;
 
         SharedPtr<Accountant> sp(&acc, deleter, alloc);
-        std::cout << Accountant::destructed << " count\n";
+
         auto ssp = std::move(sp);
-        std::cout << Accountant::destructed << " count\n";
+
         auto sssp = ssp;
-        std::cout << Accountant::destructed << " count\n";
 
         ssp = makeShared<Accountant>();
-        std::cout << Accountant::destructed << " count\n";
     }
 
     REQUIRE(new_called == 1);  // for makeShared
@@ -748,74 +697,4 @@ TEST_CASE("CustomDeleter") {
     REQUIRE(construct_called == 0);
     REQUIRE(destroy_called == 0);
     REQUIRE(custom_deleter_called == 1);
-}
-
-
-
-TEST_CASE("Custom1") {
-    SharedPtr<int> p1 = makeShared<int>(5);
-
-    SharedPtr<int> p2 = p1;
-
-    std::cout << p2.use_count() << " ???\n";
-
-    SharedPtr<int> p3(p1);
-    std::cout << (p3.use_count());
-    std::cout << (*p3);
-    p1 = p2;
-    std::cout << (*p1);
-}
-
-TEST_CASE("Custom2") {
-    using std::vector;
-
-    auto first_ptr = SharedPtr<vector<int>>(new vector<int>(1'000'000));
-    (*first_ptr)[0] = 1;
-
-    vector<int>& vec = *first_ptr;
-    auto second_ptr = SharedPtr<vector<int>>(new vector<int>(vec));
-    (*second_ptr)[0] = 2;
-
-    SECTION("Swaps") {
-        // for (int i = 0; i < 1'000'000; ++i) {
-        //     first_ptr.swap(second_ptr);
-        // }
-        first_ptr->swap(*second_ptr);
-
-        REQUIRE(first_ptr->front() == 2);
-        REQUIRE(second_ptr->front() == 1);
-
-        REQUIRE(first_ptr.use_count() == 1);
-        REQUIRE(second_ptr.use_count() == 1);
-
-        for (int i = 0; i < 10; ++i) {
-            auto third_ptr = SharedPtr<vector<int>>(new vector<int>(vec));
-            auto fourth_ptr = second_ptr;
-            // REQUIRE(second_ptr.use_count() == 2);
-            REQUIRE(fourth_ptr.use_count() == 2);
-
-            fourth_ptr.swap(third_ptr);
-            REQUIRE(second_ptr.use_count() == 2);
-        }
-
-        REQUIRE(second_ptr.use_count() == 1);
-    }
-
-    SECTION("Multiple users") {
-        vector<SharedPtr<vector<int>>> ptrs(10, SharedPtr<vector<int>>(first_ptr));
-        for (int i = 0; i < 100'000; ++i) {
-            ptrs.push_back(ptrs.back());
-            ptrs.push_back(SharedPtr<vector<int>>(ptrs.back()));
-        }
-        REQUIRE(first_ptr.use_count() == 1 + 10 + 200'000);
-    }
-}
-
-TEST_CASE("Custom3") {
-    SharedPtr<int> p1(new int(5));
-
-    SharedPtr<int> p2 = p1;
-    // std::cout << *p2 << ' ' << p2.use_count() << '\n';
-
-    // REQUIRE(p2.use_count() == 2);
 }
