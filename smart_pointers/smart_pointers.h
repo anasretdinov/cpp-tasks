@@ -85,7 +85,8 @@ struct FatControlBlock : BaseControlBlock {
     DataHolder<T> obj;
 
     template<typename... Args>
-    FatControlBlock(Args&&... args) {
+    FatControlBlock(Allocator alloc, Args&&... args)
+    : a(alloc) {
         new (&obj.val) T(std::forward<Args>(args)...);
     }
 
@@ -96,12 +97,11 @@ struct FatControlBlock : BaseControlBlock {
     void destroy() override {
 
         Allocator al = a;
-        this -> ~FatControlBlock();
-
         using traits = std::allocator_traits<Allocator>;
         using good_alloc_type = typename traits :: template rebind_alloc<FatControlBlock<T, Allocator>>;
         using good_alloc_traits = typename traits :: template rebind_traits<FatControlBlock<T, Allocator>>;
         auto ppt = static_cast<good_alloc_type>(al);
+        good_alloc_traits::destroy(ppt, this);
         good_alloc_traits::deallocate(ppt, this, 1);
 
         // this -> ~FatControlBlock();
@@ -368,13 +368,20 @@ public:
     }
 };
 
-template<typename T, typename... Args>
-SharedPtr<T> makeShared(Args&&... args) {
+
+template<typename T, typename Allocator, typename... Args>
+SharedPtr<T> allocateShared(Allocator allocator, Args&&... args) {
     SharedPtr<T> to_return;
-    std::allocator<FatControlBlock<T, std::allocator<std::byte>>> al;
-    auto mem = al.allocate(1);
-    to_return.cblock = new (mem) FatControlBlock<T, std::allocator<std::byte>>(std::forward<Args>(args)...);
-    to_return.ptr = &(dynamic_cast<FatControlBlock<T, std::allocator<std::byte>>*>(to_return.cblock) -> obj.val);
+
+    using traits = std::allocator_traits<Allocator>;
+    using good_alloc_type = typename traits :: template rebind_alloc<FatControlBlock<T, Allocator>>;
+    using good_alloc_traits = typename traits :: template rebind_traits<FatControlBlock<T, Allocator>>;
+    auto ppt = static_cast<good_alloc_type>(allocator);
+    FatControlBlock<T, Allocator>* mem = good_alloc_traits::allocate(ppt, 1);
+    to_return.cblock = mem;
+    good_alloc_traits::construct(ppt, mem, allocator, std::forward<Args>(args)...);
+    // to_return.cblock = new (mem) FatControlBlock<T, Allocator>(allocator, std::forward<Args>(args)...);
+    to_return.ptr = &(dynamic_cast<FatControlBlock<T, Allocator>*>(to_return.cblock) -> obj.val);
     to_return.cblock -> spcount++;
 
     if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
@@ -382,6 +389,26 @@ SharedPtr<T> makeShared(Args&&... args) {
     }
     return to_return;
 }
+
+template<typename T, typename... Args>
+SharedPtr<T> makeShared(Args&&... args) {
+    return allocateShared<T>(std::allocator<std::byte>(), std::forward<Args>(args)...);
+
+    // SharedPtr<T> to_return;
+    
+
+    // std::allocator<FatControlBlock<T, std::allocator<std::byte>>> al;
+    // auto mem = al.allocate(1);
+    // to_return.cblock = new (mem) FatControlBlock<T, std::allocator<std::byte>>(std::forward<Args>(args)...);
+    // to_return.ptr = &(dynamic_cast<FatControlBlock<T, std::allocator<std::byte>>*>(to_return.cblock) -> obj.val);
+    // to_return.cblock -> spcount++;
+
+    // if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
+    //     static_cast<EnableSharedFromThis<T>*>(to_return.ptr) -> info = to_return;
+    // }
+    // return to_return;
+}
+
 
 template <typename T>
 class WeakPtr {

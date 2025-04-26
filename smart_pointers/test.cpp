@@ -486,7 +486,7 @@ TEST_CASE("[Allocate|Make]Shared") {
         REQUIRE(new_called == 1);
         REQUIRE(delete_called == 1);
     }
-/*
+
     SECTION("AllocatedShared, MoveOnly") {
         new_called = 0;
         delete_called = 0;
@@ -556,7 +556,7 @@ TEST_CASE("[Allocate|Make]Shared") {
         REQUIRE(new_called == 0);
         REQUIRE(delete_called == 0);
     }
-    */
+    
 }
 
 struct Enabled : public EnableSharedFromThis<Enabled> {
@@ -654,7 +654,7 @@ TEST_CASE("InheritanceDestroy") {
         REQUIRE(mother_created == 3);
         REQUIRE(mother_destroyed == 3);
     }
-/*
+
     SECTION("Custom alloc") {
         {
             MyAllocator<Son> alloc;
@@ -675,7 +675,7 @@ TEST_CASE("InheritanceDestroy") {
         REQUIRE(construct_called == 1);
         REQUIRE(destroy_called == 1);
     }
-*/
+
 }
 
 int custom_deleter_called = 0;
