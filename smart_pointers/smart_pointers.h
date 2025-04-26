@@ -219,9 +219,9 @@ public:
 
     template <typename Y>
     SharedPtr& operator=(const SharedPtr<Y>& other) {
-        if (this == &other) {
-            return *this;
-        }
+        // if (this == &other) {
+        //     return *this;
+        // }
         delete_helper();
         cblock = other.cblock;
         ptr = other.ptr;

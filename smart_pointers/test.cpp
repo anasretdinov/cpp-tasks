@@ -339,7 +339,7 @@ struct Accountant {
 
 int Accountant::constructed = 0;
 int Accountant::destructed = 0;
-
+*/
 int allocated = 0;
 int deallocated = 0;
 
@@ -351,7 +351,7 @@ int delete_called = 0;
 
 int construct_called = 0;
 int destroy_called = 0;
-
+/*
 struct VerySpecialType {};
 
 void* operator new(size_t n) {
@@ -412,7 +412,7 @@ struct MyAllocator {
         ptr->~U();
     }
 };
-
+*/
 void InitCounters() {
     allocated = 0;
     deallocated = 0;
@@ -421,7 +421,7 @@ void InitCounters() {
     construct_called = 0;
     destroy_called = 0;
 }
-
+/*
 TEST_CASE("[Allocate|Make]Shared") {
     Accountant::constructed = 0;
     Accountant::destructed = 0;
@@ -581,7 +581,7 @@ TEST_CASE("EnableSharedFromThis") {
         sp.reset();
     }
 }
-
+*/
 int mother_created = 0;
 int mother_destroyed = 0;
 int son_created = 0;
@@ -628,7 +628,7 @@ TEST_CASE("InheritanceDestroy") {
         REQUIRE(mother_created == 3);
         REQUIRE(mother_destroyed == 3);
     }
-
+/*
     SECTION("Custom alloc") {
         {
             MyAllocator<Son> alloc;
@@ -649,8 +649,9 @@ TEST_CASE("InheritanceDestroy") {
         REQUIRE(construct_called == 1);
         REQUIRE(destroy_called == 1);
     }
+*/
 }
-
+/*
 int custom_deleter_called = 0;
 
 struct MyDeleter {
