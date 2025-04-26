@@ -44,7 +44,6 @@ struct WeakControlBlock : BaseControlBlock {
     }
 
     void destroy() override {
-        std::cout << " destruction \n";
         Allocator al = a;
         this -> ~WeakControlBlock();
 
@@ -95,8 +94,6 @@ struct FatControlBlock : BaseControlBlock {
 
 
     void destroy() override {
-        std::cout << " oleole  destroyn\n";
-        delete_inside();
         delete this;
         // this -> ~FatControlBlock();
         // std::allocator<FatControlBlock<T>> al;
