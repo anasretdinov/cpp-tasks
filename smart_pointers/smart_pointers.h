@@ -18,11 +18,13 @@ struct BaseControlBlock {
     virtual ~BaseControlBlock() = default;
 };
 
-template <typename T>
+
+template <typename T, typename Deleter>
 struct WeakControlBlock : BaseControlBlock {
+    [[no_unique_address]] Deleter d;    
     T* ptr;
 
-    WeakControlBlock(T* p) : ptr(p) {}
+    WeakControlBlock(T* p, Deleter deleter = Deleter()) : d(deleter), ptr(p) {}
 
     ~WeakControlBlock() override {
         delete_inside();
@@ -30,10 +32,28 @@ struct WeakControlBlock : BaseControlBlock {
 
     void delete_inside() override {
         if (!ptr) return;
-        delete ptr;
+        d(ptr);
         ptr = nullptr;
     }
 };
+
+
+// template <typename T, std::default_delete>
+// struct WeakControlBlock : BaseControlBlock {
+//     T* ptr;
+
+//     WeakControlBlock(T* p) : ptr(p) {}
+
+//     ~WeakControlBlock() override {
+//         delete_inside();
+//     }
+
+//     void delete_inside() override {
+//         if (!ptr) return;
+//         delete ptr;
+//         ptr = nullptr;
+//     }
+// };
 
 // template<typename T, typename Alloc = std::allocator> // здесь в alloc придет уже аккуратный тип, прогнанный через rebind 
 template <typename T>
@@ -112,18 +132,20 @@ private:
     }
 
 
-    // constructor for make_shared and WeakPtr::lock
-    SharedPtr(BaseControlBlock* cb)
+    // constructor for makeShared
+    SharedPtr(FatControlBlock<T>* cb)
     : cblock(cb) {
         // std::cout << "BOOO\n";
         cb -> spcount++;
         auto cblock_casted = dynamic_cast<FatControlBlock<T>*>(cb);
-        if (cblock_casted == nullptr) {
-            ptr = dynamic_cast<WeakControlBlock<T>*>(cb) -> ptr;
-            // std::cout << dynamic_cast<WeakControlBlock<T>*>(cb) << " proshup\n";
-        } else {
-            ptr = &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);    
-        }
+        ptr = &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
+    }
+
+    // constructor for WeakPtr::lock
+    SharedPtr(BaseControlBlock* cb, T* ptr)
+    : cblock(cb)
+    , ptr(ptr) {
+        cb -> spcount++;
     }
 
     void delete_helper() {
@@ -136,26 +158,30 @@ private:
         cblock -> spcount--;
 
         if (cblock -> spcount == 0) {
-            // std::cout << " expired\n";
-            
             cblock -> delete_inside();
 
             if (cblock -> weakcount == 0) {
                 delete cblock; 
             }
         }
-        // std::cout << " the end\n";
     }
 public:
     SharedPtr()
-    : cblock(new WeakControlBlock<T>(nullptr))
+    : cblock(new WeakControlBlock<T, std::default_delete<T>>(nullptr))
     , ptr(nullptr) {
         cblock -> spcount++;
     }
 
     template<typename Y>
     SharedPtr(Y* ptr) 
-    : cblock(new WeakControlBlock<T>(static_cast<T*>(ptr)))
+    : cblock(new WeakControlBlock<T, std::default_delete<Y>>(static_cast<T*>(ptr)))
+    , ptr(static_cast<T*>(ptr)) {
+        cblock -> spcount++;
+    }
+
+    template<typename Y, typename Deleter>
+    SharedPtr(Y* ptr, Deleter d)
+    : cblock(new WeakControlBlock<T, Deleter>(static_cast<T*>(ptr), d))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
     }
@@ -197,9 +223,9 @@ public:
 
     template <typename Y>
     SharedPtr& operator=(const SharedPtr<Y>& other) {
-        if (this == &other) {
-            return *this;
-        }
+        // if (this == &other) {
+        //     return *this;
+        // }
         delete_helper();
         cblock = other.cblock;
         ptr = other.ptr;
@@ -276,14 +302,21 @@ public:
     void reset(Y* new_obj) {
         delete_helper();
         ptr = static_cast<T*>(new_obj);
-        cblock = new WeakControlBlock(ptr);
+        cblock = new WeakControlBlock<T, std::default_delete<Y>>(ptr);
+        cblock -> spcount++;
+    }
+
+    template <typename Y, typename Deleter>
+    void reset(Y* new_obj, Deleter d) {
+        delete_helper();
+        ptr = static_cast<T*>(new_obj);
+        cblock = new WeakControlBlock(ptr, d);
         cblock -> spcount++;
     }
 
     void reset() {
         delete_helper();
-        // std::cout << " heheheh\n";
-        cblock = new WeakControlBlock<T>(nullptr);
+        cblock = new WeakControlBlock<T, std::default_delete<T>>(nullptr);
         ptr = nullptr;
         cblock -> spcount++;
     }
@@ -295,30 +328,22 @@ public:
 
 template<typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
-    return SharedPtr<T>(dynamic_cast<BaseControlBlock*>(new FatControlBlock<T>(std::forward<Args>(args)...)));
+    return SharedPtr<T>(new typename SharedPtr<T>::template FatControlBlock<T>(std::forward<Args>(args)...));
 }
 
-// template<typename T, typename Alloc, typename... Args>
-// SharedPtr<T> allocateShared(const Alloc& alloc, Args&&... args) {
-//     using alloc_traits = std::allocator_traits<Alloc>;
-//     using CB_alloc_traits = typename alloc_traits::template rebind_alloc<FatControlBlock<T>>;
-//     using CB_alloc_type = typename alloc_traits::template rebind_traits<FatControlBlock<T>>;
-
-//     CB_alloc_type allocator = alloc;
-
-//     FatControlBlock<T>* place = CB_alloc_traits::allocate(allocator, 1);
-//     CB_alloc_traits
-
-
-// }
-
+template<typename T, typename Alloc, typename... Args> 
+SharedPtr<T> allocateShared(const Alloc& alloc, Args&&... args) {
+    
+}
 
 template <typename T>
 class WeakPtr {
 private:
     BaseControlBlock* cblock = nullptr;
+    T* ptr = nullptr;
 
     void delete_helper() {
+        ptr = nullptr;
         if (!cblock) return;
         cblock -> weakcount--;
         if (cblock -> weakcount == 0 && expired()) {
@@ -332,18 +357,21 @@ public:
 
     template<typename Y>
     WeakPtr(const SharedPtr<Y>& sp) 
-    : cblock(sp.cblock) {
+    : cblock(sp.cblock)
+    , ptr(sp.ptr) {
         cblock -> weakcount++;
     }
 
     template <typename Y>
     WeakPtr(const WeakPtr<Y>& other)
-    : cblock(other.cblock) {
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
         cblock -> weakcount++;
     }
 
     WeakPtr(const WeakPtr& other)
-    : cblock(other.cblock) {
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
         cblock -> weakcount++;
     }
 
@@ -355,6 +383,7 @@ public:
         delete_helper();
 
         cblock = other.cblock;
+        ptr = other.ptr;
 
         cblock -> weakcount++;
         return *this;
@@ -368,6 +397,7 @@ public:
         delete_helper();
 
         cblock = other.cblock;
+        ptr = other.ptr;
 
         cblock -> weakcount++;
         return *this;
@@ -375,27 +405,35 @@ public:
 
     template <typename Y>
     WeakPtr(WeakPtr<Y>&& other)
-    : cblock(other.cblock) {
+    : cblock(other.cblock) 
+    , ptr(other.ptr) {
         other.cblock = nullptr;
+        other.ptr = nullptr;
     }
 
     WeakPtr(WeakPtr&& other)
-    : cblock(other.cblock) {
+    : cblock(other.cblock)
+    , ptr(other.ptr) {
         // std::cout << " there1\n";
         other.cblock = nullptr;
+        other.ptr = nullptr;
     }
 
     template <typename Y>
     WeakPtr& operator=(WeakPtr<Y>&& other) {
         delete_helper();
         cblock = other.cblock;
+        ptr = other.ptr;
         other.cblock = nullptr;
+        other.ptr = nullptr;
         return *this;
     }
 
     WeakPtr& operator=(WeakPtr&& other) {
         delete_helper();
         cblock = other.cblock;
+        ptr = other.ptr;
+        other.ptr = nullptr;
         other.cblock = nullptr;
         return *this;
     }
@@ -411,7 +449,7 @@ public:
             return SharedPtr<T>();
         } else {
             // std::cout << " other case\n";
-            return SharedPtr<T>(cblock);
+            return SharedPtr<T>(cblock, ptr);
         }
     }
 
