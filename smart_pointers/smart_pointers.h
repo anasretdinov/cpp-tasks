@@ -18,11 +18,13 @@ struct BaseControlBlock {
     virtual ~BaseControlBlock() = default;
 };
 
-template <typename T>
+
+template <typename T, typename Deleter>
 struct WeakControlBlock : BaseControlBlock {
+    [[no_unique_address]] Deleter d;    
     T* ptr;
 
-    WeakControlBlock(T* p) : ptr(p) {}
+    WeakControlBlock(T* p, Deleter deleter = Deleter()) : d(deleter), ptr(p) {}
 
     ~WeakControlBlock() override {
         delete_inside();
@@ -30,10 +32,28 @@ struct WeakControlBlock : BaseControlBlock {
 
     void delete_inside() override {
         if (!ptr) return;
-        delete ptr;
+        d(ptr);
         ptr = nullptr;
     }
 };
+
+
+// template <typename T, std::default_delete>
+// struct WeakControlBlock : BaseControlBlock {
+//     T* ptr;
+
+//     WeakControlBlock(T* p) : ptr(p) {}
+
+//     ~WeakControlBlock() override {
+//         delete_inside();
+//     }
+
+//     void delete_inside() override {
+//         if (!ptr) return;
+//         delete ptr;
+//         ptr = nullptr;
+//     }
+// };
 
 template<typename T>
 struct FatControlBlock : BaseControlBlock {
@@ -117,7 +137,6 @@ private:
     }
 
     // constructor for WeakPtr::lock
-
     SharedPtr(BaseControlBlock* cb, T* ptr)
     : cblock(cb)
     , ptr(ptr) {
@@ -135,26 +154,30 @@ private:
         cblock -> spcount--;
 
         if (cblock -> spcount == 0) {
-            // std::cout << " expired\n";
-            
             cblock -> delete_inside();
 
             if (cblock -> weakcount == 0) {
                 delete cblock; 
             }
         }
-        // std::cout << " the end\n";
     }
 public:
     SharedPtr()
-    : cblock(new WeakControlBlock<T>(nullptr))
+    : cblock(new WeakControlBlock<T, std::default_delete<T>>(nullptr))
     , ptr(nullptr) {
         cblock -> spcount++;
     }
 
     template<typename Y>
     SharedPtr(Y* ptr) 
-    : cblock(new WeakControlBlock<T>(static_cast<T*>(ptr)))
+    : cblock(new WeakControlBlock<T, std::default_delete<Y>>(static_cast<T*>(ptr)))
+    , ptr(static_cast<T*>(ptr)) {
+        cblock -> spcount++;
+    }
+
+    template<typename Y, typename Deleter>
+    SharedPtr(Y* ptr, Deleter d)
+    : cblock(new WeakControlBlock<T, Deleter>(static_cast<T*>(ptr), d))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
     }
@@ -275,14 +298,21 @@ public:
     void reset(Y* new_obj) {
         delete_helper();
         ptr = static_cast<T*>(new_obj);
-        cblock = new WeakControlBlock(ptr);
+        cblock = new WeakControlBlock<T, std::default_delete<Y>>(ptr);
+        cblock -> spcount++;
+    }
+
+    template <typename Y, typename Deleter>
+    void reset(Y* new_obj, Deleter d) {
+        delete_helper();
+        ptr = static_cast<T*>(new_obj);
+        cblock = new WeakControlBlock(ptr, d);
         cblock -> spcount++;
     }
 
     void reset() {
         delete_helper();
-        // std::cout << " heheheh\n";
-        cblock = new WeakControlBlock<T>(nullptr);
+        cblock = new WeakControlBlock<T, std::default_delete<T>>(nullptr);
         ptr = nullptr;
         cblock -> spcount++;
     }

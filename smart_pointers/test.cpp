@@ -236,7 +236,7 @@ TEST_CASE("WeakPtr") {
         REQUIRE(wwp.use_count() == 1);
         REQUIRE(weak.use_count() == 0);
         REQUIRE(weak.expired());
-        std::cout << dynamic_cast<WeakControlBlock<int>*>(sp.cblock) << "progrev \n";
+        // std::cout << dynamic_cast<WeakControlBlock<int>*>(sp.cblock) << "progrev \n";
         auto ssp = wwp.lock();
         REQUIRE(sp.use_count() == 2);
         REQUIRE(ssp.get() == sp.get());
