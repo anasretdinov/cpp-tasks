@@ -557,7 +557,7 @@ TEST_CASE("[Allocate|Make]Shared") {
     }
     */
 }
-/*
+
 struct Enabled : public EnableSharedFromThis<Enabled> {
     SharedPtr<Enabled> get_shared() {
         return shared_from_this();
@@ -586,19 +586,27 @@ TEST_CASE("EnableSharedFromThis") {
 
     SECTION("Manual allocation") {
         SharedPtr<Enabled> esp(new Enabled());
-
+        std::cout << " hm\n";
         auto& e = *esp;
         auto sp = e.get_shared();
+        std::cout << " hm\n";
 
         REQUIRE(sp.use_count() == 2);
-
+        std::cout << " hm\n";
+        std::cout << sp.cblock -> spcount << ' ' << sp.cblock -> weakcount << '\n';
         esp.reset();
+        std::cout << " hm\n";
+        std::cout << sp.cblock -> spcount << ' ' << sp.cblock -> weakcount << '\n';
+
         REQUIRE(sp.use_count() == 1);
+        std::cout << " hm\n";
 
         sp.reset();
+        std::cout << " hm\n";
+
     }
 }
-*/
+
 int mother_created = 0;
 int mother_destroyed = 0;
 int son_created = 0;
