@@ -21,7 +21,7 @@ struct BaseControlBlock {
 
 template <typename T, typename Deleter>
 struct WeakControlBlock : BaseControlBlock {
-    [[no_unique_address]] Deleter d;    
+    [[no_unique_address]] Deleter d;
     T* ptr;
 
     WeakControlBlock(T* p, Deleter deleter = Deleter()) : d(deleter), ptr(p) {}
@@ -38,40 +38,15 @@ struct WeakControlBlock : BaseControlBlock {
 };
 
 
-// template <typename T, std::default_delete>
-// struct WeakControlBlock : BaseControlBlock {
-//     T* ptr;
+template<typename T, typename Deleter, typename Allocator>
+WeakControlBlock<T, Deleter> custom_construct_weak(T* ptr, Deleter d, Allocator a) {
+    using traits = std::allocator_traits<Allocator>;
+    using good_alloc_type = typename traits :: template rebind_alloc<WeakControlBlock<T, Deleter>>;
+    using good_alloc_traits = typename traits :: template rebind_traits<WeakControlBlock<T, Deleter>>;
 
-//     WeakControlBlock(T* p) : ptr(p) {}
-
-//     ~WeakControlBlock() override {
-//         delete_inside();
-//     }
-
-//     void delete_inside() override {
-//         if (!ptr) return;
-//         delete ptr;
-//         ptr = nullptr;
-//     }
-// };
-
-
-// template <typename T, std::default_delete>
-// struct WeakControlBlock : BaseControlBlock {
-//     T* ptr;
-
-//     WeakControlBlock(T* p) : ptr(p) {}
-
-//     ~WeakControlBlock() override {
-//         delete_inside();
-//     }
-
-//     void delete_inside() override {
-//         if (!ptr) return;
-//         delete ptr;
-//         ptr = nullptr;
-//     }
-// };
+    WeakControlBlock<T, Deleter>* space = good_alloc_traits::allocate(static_cast<good_alloc_type>(a), 1);
+    return new(space) WeakControlBlock<T, Deleter>(ptr, d);
+}
 
 // template<typename T, typename Alloc = std::allocator> // здесь в alloc придет уже аккуратный тип, прогнанный через rebind 
 template <typename T>
@@ -174,7 +149,15 @@ public:
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
     }
-    
+
+    template<typename Y, typename Deleter, typename Allocator>
+    SharedPtr(Y* ptr, Deleter d, Allocator a)
+    : cblock(custom_construct_weak(static_cast<T*>(ptr)), d, a)
+    , ptr(static_cast<T*>(ptr)) {
+        cblock -> spcount++;
+    }
+
+
     template <typename Y>
     SharedPtr(const SharedPtr<Y>& other) 
     : cblock(other.cblock)
