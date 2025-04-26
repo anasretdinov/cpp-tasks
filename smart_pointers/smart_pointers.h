@@ -19,33 +19,41 @@ struct BaseControlBlock {
 };
 
 
-template <typename T, typename Deleter>
+template <typename T, typename Deleter, typename Allocator>
 struct WeakControlBlock : BaseControlBlock {
     [[no_unique_address]] Deleter d;
+    [[no_unique_address]] Allocator a;
     T* ptr;
 
-    WeakControlBlock(T* p, Deleter deleter = Deleter()) : d(deleter), ptr(p) {}
+    WeakControlBlock(T* p, Deleter deleter = Deleter(), Allocator allocator = Allocator()) : d(deleter), a(allocator), ptr(p) {}
 
     ~WeakControlBlock() override {
         delete_inside();
+        using traits = std::allocator_traits<Allocator>;
+        using good_alloc_type = typename traits :: template rebind_alloc<WeakControlBlock<T, Deleter, Allocator>>;
+        using good_alloc_traits = typename traits :: template rebind_traits<WeakControlBlock<T, Deleter, Allocator>>;
+        auto ppt = static_cast<good_alloc_type>(a);
+        good_alloc_traits::deallocate(ppt, this, 1);
     }
 
     void delete_inside() override {
         if (!ptr) return;
         d(ptr);
         ptr = nullptr;
+        
     }
 };
 
 
 template<typename T, typename Deleter, typename Allocator>
-WeakControlBlock<T, Deleter> custom_construct_weak(T* ptr, Deleter d, Allocator a) {
+WeakControlBlock<T, Deleter, Allocator>* custom_construct_weak(T* ptr, Deleter d, Allocator a) {
     using traits = std::allocator_traits<Allocator>;
-    using good_alloc_type = typename traits :: template rebind_alloc<WeakControlBlock<T, Deleter>>;
-    using good_alloc_traits = typename traits :: template rebind_traits<WeakControlBlock<T, Deleter>>;
+    using good_alloc_type = typename traits :: template rebind_alloc<WeakControlBlock<T, Deleter, Allocator>>;
+    using good_alloc_traits = typename traits :: template rebind_traits<WeakControlBlock<T, Deleter, Allocator>>;
+    auto ppt = static_cast<good_alloc_type>(a);
 
-    WeakControlBlock<T, Deleter>* space = good_alloc_traits::allocate(static_cast<good_alloc_type>(a), 1);
-    return new(space) WeakControlBlock<T, Deleter>(ptr, d);
+    WeakControlBlock<T, Deleter, Allocator>* space = good_alloc_traits::allocate(ppt, 1);
+    return new(space) WeakControlBlock<T, Deleter, Allocator>(ptr, d, a);
 }
 
 // template<typename T, typename Alloc = std::allocator> // здесь в alloc придет уже аккуратный тип, прогнанный через rebind 
@@ -75,6 +83,21 @@ struct FatControlBlock : BaseControlBlock {
 
     ~FatControlBlock() = default;
 };
+
+template <typename T>
+void controlblock_delete(BaseControlBlock*& cb) {
+    if (cb == nullptr) {
+        return;
+    }
+    FatControlBlock<T>* casted = dynamic_cast<FatControlBlock<T>*>(cb);
+
+    if (casted != nullptr) {
+        delete cb; // честно 
+    } else {
+        cb -> ~BaseControlBlock();
+        cb = nullptr; // очень важно, чтобы не было double free
+    }
+}
 
 template <typename T>
 class SharedPtr {
@@ -126,7 +149,7 @@ private:
             cblock -> delete_inside();
 
             if (cblock -> weakcount == 0) {
-                delete cblock; 
+                controlblock_delete<T>(cblock);
             }
         }
     }
@@ -138,21 +161,21 @@ public:
 
     template<typename Y>
     SharedPtr(Y* ptr) 
-    : cblock(new WeakControlBlock<T, std::default_delete<Y>>(static_cast<T*>(ptr)))
+    : cblock(custom_construct_weak(static_cast<T*>(ptr), std::default_delete<T>(), std::allocator<T>()))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
     }
 
     template<typename Y, typename Deleter>
     SharedPtr(Y* ptr, Deleter d)
-    : cblock(new WeakControlBlock<T, Deleter>(static_cast<T*>(ptr), d))
+    : cblock(custom_construct_weak(static_cast<T*>(ptr), d, std::allocator<T>()))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
     }
 
     template<typename Y, typename Deleter, typename Allocator>
     SharedPtr(Y* ptr, Deleter d, Allocator a)
-    : cblock(custom_construct_weak(static_cast<T*>(ptr)), d, a)
+    : cblock(custom_construct_weak(static_cast<T*>(ptr), d, a))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
     }
@@ -274,7 +297,7 @@ public:
     void reset(Y* new_obj) {
         delete_helper();
         ptr = static_cast<T*>(new_obj);
-        cblock = new WeakControlBlock<T, std::default_delete<Y>>(ptr);
+        cblock = custom_construct_weak(ptr, std::default_delete<T>(), std::allocator<T>());
         cblock -> spcount++;
     }
 
@@ -282,7 +305,15 @@ public:
     void reset(Y* new_obj, Deleter d) {
         delete_helper();
         ptr = static_cast<T*>(new_obj);
-        cblock = new WeakControlBlock(ptr, d);
+        cblock = custom_construct_weak(ptr, d, std::allocator<T>());
+        cblock -> spcount++;
+    }
+
+    template<typename Y, typename Deleter, typename Allocator>
+    void reset(Y* new_obj, Deleter d, Allocator a) {
+        delete_helper();
+        ptr = static_cast<T*>(new_obj);
+        cblock = custom_construct_weak(ptr, d, a);
         cblock -> spcount++;
     }
 
@@ -318,7 +349,7 @@ private:
         cblock -> weakcount--;
         if (cblock -> weakcount == 0 && expired()) {
             // тогда надо совсем все сносить
-            delete cblock;
+            controlblock_delete<T>(cblock);
             cblock = nullptr;
         }
     }

@@ -668,7 +668,7 @@ TEST_CASE("InheritanceDestroy") {
     }
 */
 }
-/*
+
 int custom_deleter_called = 0;
 
 struct MyDeleter {
@@ -716,12 +716,14 @@ TEST_CASE("CustomDeleter") {
         MyDeleter deleter;
 
         SharedPtr<Accountant> sp(&acc, deleter, alloc);
-
+        std::cout << delete_called << " count\n";
         auto ssp = std::move(sp);
-
+        std::cout << delete_called << " count\n";
         auto sssp = ssp;
+        std::cout << delete_called << " count\n";
 
         ssp = makeShared<Accountant>();
+        std::cout << delete_called << " count\n";
     }
 
     REQUIRE(new_called == 1);  // for makeShared
@@ -739,7 +741,7 @@ TEST_CASE("CustomDeleter") {
 }
 
 
-*/
+
 TEST_CASE("Custom1") {
     SharedPtr<int> p1 = makeShared<int>(5);
 
