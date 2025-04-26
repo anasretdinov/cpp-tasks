@@ -327,6 +327,11 @@ SharedPtr<T> makeShared(Args&&... args) {
     return SharedPtr<T>(new typename SharedPtr<T>::template FatControlBlock<T>(std::forward<Args>(args)...));
 }
 
+template<typename T, typename Alloc, typename... Args> 
+SharedPtr<T> allocateShared(const Alloc& alloc, Args&&... args) {
+    
+}
+
 template <typename T>
 class WeakPtr {
 private:
