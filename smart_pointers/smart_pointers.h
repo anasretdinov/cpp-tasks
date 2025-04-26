@@ -67,8 +67,7 @@ WeakControlBlock<T, Deleter, Allocator>* custom_construct_weak(T* ptr, Deleter d
     return new(space) WeakControlBlock<T, Deleter, Allocator>(ptr, d, a);
 }
 
-// template<typename T, typename Alloc = std::allocator> // здесь в alloc придет уже аккуратный тип, прогнанный через rebind 
-template <typename T>
+template <typename T, typename Allocator>
 struct FatControlBlock : BaseControlBlock {
     template<typename U>
     union DataHolder {
@@ -81,6 +80,8 @@ struct FatControlBlock : BaseControlBlock {
             val.~U();
         }
     };
+
+    [[no_unique_address]] Allocator a;
     DataHolder<T> obj;
 
     template<typename... Args>
@@ -94,7 +95,16 @@ struct FatControlBlock : BaseControlBlock {
 
 
     void destroy() override {
-        delete this;
+
+        Allocator al = a;
+        this -> ~FatControlBlock();
+
+        using traits = std::allocator_traits<Allocator>;
+        using good_alloc_type = typename traits :: template rebind_alloc<FatControlBlock<T, Allocator>>;
+        using good_alloc_traits = typename traits :: template rebind_traits<FatControlBlock<T, Allocator>>;
+        auto ppt = static_cast<good_alloc_type>(al);
+        good_alloc_traits::deallocate(ppt, this, 1);
+
         // this -> ~FatControlBlock();
         // std::allocator<FatControlBlock<T>> al;
         // al.deallocate(this, 1);
@@ -359,9 +369,9 @@ public:
 template<typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
     SharedPtr<T> to_return;
-    std::allocator<FatControlBlock<T>> al;
+    std::allocator<FatControlBlock<T, std::allocator<std::byte>>> al;
     auto mem = al.allocate(1);
-    to_return.cblock = new (mem) FatControlBlock<T>(std::forward<Args>(args)...);
+    to_return.cblock = new (mem) FatControlBlock<T, std::allocator<std::byte>>(std::forward<Args>(args)...);
     to_return.ptr = to_return.get_ptr();
     to_return.cblock -> spcount++;
 
