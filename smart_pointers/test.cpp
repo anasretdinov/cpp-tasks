@@ -204,7 +204,9 @@ int Node::destructed = 0;
 
 SharedPtr<Node> getCyclePtr(int cycle_size) {
     SharedPtr<Node> head(new Node(0));
+
     SharedPtr<Node> prev(head);
+
     for (int i = 1; i < cycle_size; ++i) {
         SharedPtr<Node> current(new Node(i));
         prev->next.shared = current;
@@ -238,7 +240,6 @@ TEST_CASE("WeakPtr") {
         auto wp = weak;
         REQUIRE(weak.use_count() == 1);
         REQUIRE(wp.use_count() == 1);
-        std::cout << " aliveee\n";
         auto wwp = std::move(weak);
         REQUIRE(wwp.use_count() == 1);
         REQUIRE(weak.use_count() == 0);
@@ -346,7 +347,7 @@ struct Accountant {
 
 int Accountant::constructed = 0;
 int Accountant::destructed = 0;
-*/
+
 int allocated = 0;
 int deallocated = 0;
 
@@ -358,7 +359,7 @@ int delete_called = 0;
 
 int construct_called = 0;
 int destroy_called = 0;
-/*
+
 struct VerySpecialType {};
 
 void* operator new(size_t n) {
@@ -419,7 +420,7 @@ struct MyAllocator {
         ptr->~U();
     }
 };
-*/
+
 void InitCounters() {
     allocated = 0;
     deallocated = 0;
@@ -428,7 +429,7 @@ void InitCounters() {
     construct_called = 0;
     destroy_called = 0;
 }
-/*
+
 TEST_CASE("[Allocate|Make]Shared") {
     Accountant::constructed = 0;
     Accountant::destructed = 0;
@@ -442,11 +443,19 @@ TEST_CASE("[Allocate|Make]Shared") {
         {
             auto sp = makeShared<NeitherDefaultNorCopyConstructible>(
                 NeitherDefaultNorCopyConstructible(0));
+            REQUIRE(new_called == 1);
+
             WeakPtr<NeitherDefaultNorCopyConstructible> wp = sp;
+            REQUIRE(new_called == 1);
+
             auto ssp = sp;
             sp.reset();
+            REQUIRE(new_called == 1);
+
             REQUIRE(!wp.expired());
             ssp.reset();
+            REQUIRE(new_called == 1);
+
             REQUIRE(wp.expired());
         }
 
@@ -461,7 +470,7 @@ TEST_CASE("[Allocate|Make]Shared") {
         {
             auto sp = makeShared<Accountant>();
             REQUIRE(Accountant::constructed == 1);
-
+            REQUIRE(new_called == 1);
             WeakPtr<Accountant> wp = sp;
             auto ssp = sp;
             sp.reset();

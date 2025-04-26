@@ -55,6 +55,24 @@ struct WeakControlBlock : BaseControlBlock {
 //     }
 // };
 
+
+// template <typename T, std::default_delete>
+// struct WeakControlBlock : BaseControlBlock {
+//     T* ptr;
+
+//     WeakControlBlock(T* p) : ptr(p) {}
+
+//     ~WeakControlBlock() override {
+//         delete_inside();
+//     }
+
+//     void delete_inside() override {
+//         if (!ptr) return;
+//         delete ptr;
+//         ptr = nullptr;
+//     }
+// };
+
 // template<typename T, typename Alloc = std::allocator> // здесь в alloc придет уже аккуратный тип, прогнанный через rebind 
 template <typename T>
 struct FatControlBlock : BaseControlBlock {
@@ -69,17 +87,13 @@ struct FatControlBlock : BaseControlBlock {
             val.~U();
         }
     };
-
-    // [[no_unique_address]] Alloc alloc;
     DataHolder<T> obj;
-
 
     template<typename... Args>
     FatControlBlock(Args&&... args) {
         new (&obj.val) T(std::forward<Args>(args)...);
     }
 
-    // Alloc get_allocator
     void delete_inside() override {
         obj.destroy_inside();
     }
@@ -122,30 +136,6 @@ private:
         } else {
             return &(cblock_casted -> obj.val);
         }
-
-
-        // if (ptr == nullptr) {
-        //     return &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
-        // } else {
-        //     return ptr;
-        // }
-    }
-
-
-    // constructor for makeShared
-    SharedPtr(FatControlBlock<T>* cb)
-    : cblock(cb) {
-        // std::cout << "BOOO\n";
-        cb -> spcount++;
-        auto cblock_casted = dynamic_cast<FatControlBlock<T>*>(cb);
-        ptr = &(dynamic_cast<FatControlBlock<T>*>(cblock) -> obj.val);
-    }
-
-    // constructor for WeakPtr::lock
-    SharedPtr(BaseControlBlock* cb, T* ptr)
-    : cblock(cb)
-    , ptr(ptr) {
-        cb -> spcount++;
     }
 
     void delete_helper() {
@@ -167,9 +157,8 @@ private:
     }
 public:
     SharedPtr()
-    : cblock(new WeakControlBlock<T, std::default_delete<T>>(nullptr))
+    : cblock(nullptr)
     , ptr(nullptr) {
-        cblock -> spcount++;
     }
 
     template<typename Y>
@@ -196,7 +185,9 @@ public:
     SharedPtr(const SharedPtr& other)
     : cblock(other.cblock)
     , ptr(other.ptr) {
-        cblock -> spcount++;
+        // std::cout << " copy constructor \n";
+        // std::cout << cblock << '\n';
+        if (cblock) cblock -> spcount++;
     }
 
     // Aliasing constructor
@@ -204,7 +195,7 @@ public:
     SharedPtr(const SharedPtr<Y>& other, T* ptr) 
     : cblock(other.cblock)
     , ptr(ptr) {
-        cblock -> spcount++;
+        if (cblock) cblock -> spcount++;
     }
 
 
@@ -229,7 +220,7 @@ public:
         delete_helper();
         cblock = other.cblock;
         ptr = other.ptr;
-        cblock -> spcount++;
+        if (cblock) cblock -> spcount++;
         return *this;
     }
 
@@ -258,9 +249,7 @@ public:
         delete_helper();
         cblock = other.cblock;
         ptr = other.ptr;
-        if (cblock) {
-            cblock->spcount++;
-        }
+        if (cblock) cblock -> spcount++;
         return *this;
     }
 
@@ -316,9 +305,8 @@ public:
 
     void reset() {
         delete_helper();
-        cblock = new WeakControlBlock<T, std::default_delete<T>>(nullptr);
+        cblock = nullptr;
         ptr = nullptr;
-        cblock -> spcount++;
     }
 
     T* get() const {
@@ -328,12 +316,11 @@ public:
 
 template<typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
-    return SharedPtr<T>(new typename SharedPtr<T>::template FatControlBlock<T>(std::forward<Args>(args)...));
-}
-
-template<typename T, typename Alloc, typename... Args> 
-SharedPtr<T> allocateShared(const Alloc& alloc, Args&&... args) {
-    
+    SharedPtr<T> to_return;
+    to_return.cblock = new FatControlBlock<T>(std::forward<Args>(args)...);
+    to_return.ptr = to_return.get_ptr();
+    to_return.cblock -> spcount++;
+    return to_return;
 }
 
 template <typename T>
@@ -444,13 +431,13 @@ public:
     }
 
     SharedPtr<T> lock() const noexcept {
-        if (expired()) {
-            // std::cout << " that case\n";
-            return SharedPtr<T>();
-        } else {
-            // std::cout << " other case\n";
-            return SharedPtr<T>(cblock, ptr);
+        SharedPtr<T> to_return;
+        if (!expired()) {
+            to_return.cblock = cblock;
+            to_return.ptr = ptr;
+            to_return.cblock -> spcount++;
         }
+        return to_return;
     }
 
     ~WeakPtr() {
