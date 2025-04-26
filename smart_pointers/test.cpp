@@ -451,9 +451,10 @@ TEST_CASE("[Allocate|Make]Shared") {
             auto ssp = sp;
             sp.reset();
             REQUIRE(new_called == 1);
-
+            std::cout << " that guy\n";
             REQUIRE(!wp.expired());
             ssp.reset();
+            std::cout << delete_called << " after see\n";
             REQUIRE(new_called == 1);
 
             REQUIRE(wp.expired());
@@ -682,6 +683,7 @@ int custom_deleter_called = 0;
 struct MyDeleter {
     template <typename T>
     void operator()(T*) {
+        std::cout << " AIAIAO IFJGFNGFNGF\n";
         ++custom_deleter_called;
     }
 };
@@ -724,14 +726,14 @@ TEST_CASE("CustomDeleter") {
         MyDeleter deleter;
 
         SharedPtr<Accountant> sp(&acc, deleter, alloc);
-        std::cout << delete_called << " count\n";
+        std::cout << Accountant::destructed << " count\n";
         auto ssp = std::move(sp);
-        std::cout << delete_called << " count\n";
+        std::cout << Accountant::destructed << " count\n";
         auto sssp = ssp;
-        std::cout << delete_called << " count\n";
+        std::cout << Accountant::destructed << " count\n";
 
         ssp = makeShared<Accountant>();
-        std::cout << delete_called << " count\n";
+        std::cout << Accountant::destructed << " count\n";
     }
 
     REQUIRE(new_called == 1);  // for makeShared

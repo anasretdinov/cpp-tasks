@@ -10,13 +10,15 @@ class EnableSharedFromThis;
 struct BaseControlBlock {
     size_t spcount = 0, weakcount = 0;
 
-    virtual void delete_inside() {}
+    virtual void delete_inside() {};
+
+    virtual void destroy() {};
 
     BaseControlBlock()
     : spcount(0)
     , weakcount(0) {
     
-    } 
+    }
 
     virtual ~BaseControlBlock() = default;
 };
@@ -32,18 +34,25 @@ struct WeakControlBlock : BaseControlBlock {
 
     ~WeakControlBlock() override {
         delete_inside();
-        using traits = std::allocator_traits<Allocator>;
-        using good_alloc_type = typename traits :: template rebind_alloc<WeakControlBlock<T, Deleter, Allocator>>;
-        using good_alloc_traits = typename traits :: template rebind_traits<WeakControlBlock<T, Deleter, Allocator>>;
-        auto ppt = static_cast<good_alloc_type>(a);
-        good_alloc_traits::deallocate(ppt, this, 1);
+        
     }
 
     void delete_inside() override {
         if (!ptr) return;
         d(ptr);
         ptr = nullptr;
-        
+    }
+
+    void destroy() override {
+        std::cout << " destruction \n";
+        Allocator al = a;
+        this -> ~WeakControlBlock();
+
+        using traits = std::allocator_traits<Allocator>;
+        using good_alloc_type = typename traits :: template rebind_alloc<WeakControlBlock<T, Deleter, Allocator>>;
+        using good_alloc_traits = typename traits :: template rebind_traits<WeakControlBlock<T, Deleter, Allocator>>;
+        auto ppt = static_cast<good_alloc_type>(al);
+        good_alloc_traits::deallocate(ppt, this, 1);
     }
 };
 
@@ -84,6 +93,16 @@ struct FatControlBlock : BaseControlBlock {
         obj.destroy_inside();
     }
 
+
+    void destroy() override {
+        std::cout << " oleole  destroyn\n";
+        delete_inside();
+        delete this;
+        // this -> ~FatControlBlock();
+        // std::allocator<FatControlBlock<T>> al;
+        // al.deallocate(this, 1);
+    }
+
     ~FatControlBlock() = default;
 };
 
@@ -92,14 +111,9 @@ void controlblock_delete(BaseControlBlock*& cb) {
     if (cb == nullptr) {
         return;
     }
-    FatControlBlock<T>* casted = dynamic_cast<FatControlBlock<T>*>(cb);
 
-    if (casted != nullptr) {
-        delete cb; // честно 
-    } else {
-        cb -> ~BaseControlBlock();
-        cb = nullptr; // очень важно, чтобы не было double free
-    }
+    cb -> destroy();
+    cb = nullptr;
 }
 
 template <typename T>
@@ -140,6 +154,8 @@ private:
     }
 
     void delete_helper() {
+        // std::cout << " big delete helper.\n";
+
         ptr = nullptr;
         // std::cout << " this is delete helper\n";
         if (!cblock) {
@@ -346,7 +362,9 @@ public:
 template<typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
     SharedPtr<T> to_return;
-    to_return.cblock = new FatControlBlock<T>(std::forward<Args>(args)...);
+    std::allocator<FatControlBlock<T>> al;
+    auto mem = al.allocate(1);
+    to_return.cblock = new (mem) FatControlBlock<T>(std::forward<Args>(args)...);
     to_return.ptr = to_return.get_ptr();
     to_return.cblock -> spcount++;
 
