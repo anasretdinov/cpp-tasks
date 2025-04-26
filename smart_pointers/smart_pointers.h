@@ -4,6 +4,9 @@
 
 #define private public
 
+template <typename T>
+class EnableSharedFromThis;
+
 struct BaseControlBlock {
     size_t spcount = 0, weakcount = 0;
 
@@ -145,15 +148,17 @@ private:
             // типа мувнули/что-то еще
             return;
         }
-        cblock -> spcount--;
 
-        if (cblock -> spcount == 0) {
+        if (cblock -> spcount == 1) {
             cblock -> delete_inside();
 
             if (cblock -> weakcount == 0) {
                 delete cblock; 
+                cblock = nullptr;
             }
         }
+        if (cblock) cblock -> spcount--;
+        
     }
 public:
     SharedPtr()
@@ -166,6 +171,9 @@ public:
     : cblock(new WeakControlBlock<T, std::default_delete<Y>>(static_cast<T*>(ptr)))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
+        if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
+            static_cast<EnableSharedFromThis<T>*>(ptr) -> info = *this;
+        }
     }
 
     template<typename Y, typename Deleter>
@@ -173,6 +181,9 @@ public:
     : cblock(new WeakControlBlock<T, Deleter>(static_cast<T*>(ptr), d))
     , ptr(static_cast<T*>(ptr)) {
         cblock -> spcount++;
+        if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
+            static_cast<EnableSharedFromThis<T>*>(ptr) -> info = *this;
+        }
     }
     
     template <typename Y>
@@ -180,6 +191,7 @@ public:
     : cblock(other.cblock)
     , ptr(other.ptr) {
         cblock -> spcount++;
+        
     }
 
     SharedPtr(const SharedPtr& other)
@@ -304,6 +316,7 @@ public:
     }
 
     void reset() {
+        // std::cout << " reset calld\n";
         delete_helper();
         cblock = nullptr;
         ptr = nullptr;
@@ -320,6 +333,10 @@ SharedPtr<T> makeShared(Args&&... args) {
     to_return.cblock = new FatControlBlock<T>(std::forward<Args>(args)...);
     to_return.ptr = to_return.get_ptr();
     to_return.cblock -> spcount++;
+
+    if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
+        static_cast<EnableSharedFromThis<T>*>(to_return.ptr) -> info = to_return;
+    }
     return to_return;
 }
 
@@ -455,8 +472,17 @@ public:
 
 template <typename T>
 class EnableSharedFromThis {
-public:
-    SharedPtr<T> shared_from_this() {
+private:
+    template <typename U>
+    friend class SharedPtr;
 
+    WeakPtr<T> info;
+public:
+    SharedPtr<T> shared_from_this() const {
+        if (info.cblock == nullptr) {
+            // это значит, что еще не инициализировали
+            throw std::runtime_error("Called EnableSharedFromThis from unmanaged object");
+        }
+        return info.lock();
     }
 };
