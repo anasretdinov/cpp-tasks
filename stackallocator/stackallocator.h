@@ -8,7 +8,7 @@
 #include <stdexcept>
 
 template <size_t N>
-class alignas(std::max_align_t) StackStorage {
+class StackStorage {
 public:
     using mem_type = unsigned char;
 
@@ -33,7 +33,7 @@ public:
     }
 
 private:
-    mem_type mem_[N];
+    alignas(std::max_align_t) mem_type mem_[N];
 
     size_t first_free_ = 0;
     size_t space_left_ = N;
