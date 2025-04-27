@@ -2,10 +2,14 @@
 #include <memory>
 #include <type_traits>
 
-#define private public
-
 template <typename T>
 class EnableSharedFromThis;
+
+template <typename T>
+class SharedPtr;
+
+template <typename T>
+class WeakPtr;
 
 struct BaseControlBlock {
     size_t spcount = 0, weakcount = 0;
@@ -124,8 +128,11 @@ private:
     BaseControlBlock* cblock = nullptr;
     T* ptr = nullptr;
 
-    template<typename U, typename... Args>
-    friend SharedPtr<U> makeShared(Args&&... args);
+    template <typename U>
+    friend class SharedPtr;
+
+    template<typename U, typename Alloc, typename... Args>
+    friend SharedPtr<U> allocateShared(Alloc, Args&&... args);
 
     template<typename U>
     friend class WeakPtr;
@@ -368,6 +375,12 @@ private:
     BaseControlBlock* cblock = nullptr;
     T* ptr = nullptr;
 
+    template <typename U>
+    friend class WeakPtr;
+
+    template <typename U>
+    friend class EnableSharedFromThis;
+
     void delete_helper() {
         ptr = nullptr;
         if (!cblock) return;
@@ -497,6 +510,9 @@ private:
     template <typename U>
     friend class SharedPtr;
 
+
+    template <typename U, typename Alloc, typename... Args>
+    friend SharedPtr<U> allocateShared(Alloc, Args&&...);
     WeakPtr<T> info;
 public:
     SharedPtr<T> shared_from_this() const {
