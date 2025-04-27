@@ -108,6 +108,7 @@ public:
 private:
     struct BaseNode;
     struct ListNode;
+
 public:
     friend struct BaseNode;
     friend struct ListNode;
@@ -167,6 +168,7 @@ public:
             node_ = node_->prev;
             return copy;
         }
+
     private:
         BaseIterator next() const {
             return iterator(node_->next);
@@ -429,7 +431,6 @@ public:
         }
         return iterator(place);
     }
-
 
     template <typename... Args>
     void emplace_back(const Args&... args) {
