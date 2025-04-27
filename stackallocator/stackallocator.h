@@ -7,11 +7,11 @@
 #include <memory>
 #include <stdexcept>
 
-using mem_type = unsigned char;
-
 template <size_t N>
 class alignas(std::max_align_t) StackStorage {
 public:
+    using mem_type = unsigned char;
+
     StackStorage() {
     }
 
@@ -71,7 +71,7 @@ public:
     // StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
 
     T* allocate(size_t n) {
-        mem_type* raw_memory = storage_->get_memory(n * kSize, kAlignment);
+        storage_::mem_type* raw_memory = storage_->get_memory(n * kSize, kAlignment);
         return reinterpret_cast<T*>(raw_memory);
     }
 
