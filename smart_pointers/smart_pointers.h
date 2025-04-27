@@ -1,6 +1,7 @@
 
 #include <memory>
 #include <type_traits>
+#include <stdexcept>
 
 template <typename T>
 class EnableSharedFromThis;
@@ -297,7 +298,7 @@ public:
         return *this;
     }
 
-    long use_count() const {
+    int64_t use_count() const {
         return cblock_->spcount;
     }
 
@@ -494,7 +495,7 @@ public:
     }
 
     bool expired() const noexcept {
-        return (!cblock_ ||  cblock_->spcount == 0);
+        return (!cblock_ || cblock_->spcount == 0);
     }
 
     SharedPtr<T> lock() const noexcept {
@@ -511,12 +512,12 @@ public:
         delete_helper();
     }
 
-    long use_count() const {
+    int64_t use_count() const {
         if (!cblock_) {
             // допустим, мувнули
             return 0;
         }
-        return  cblock_->spcount;
+        return cblock_->spcount;
     }
 };
 
