@@ -354,16 +354,6 @@ public:
         clear();
     }
 
-    void check_link_safety() const {
-        const BaseNode* now = root_.next;
-        while (now != &root_) {
-            if (now != (now->next->prev)) {
-                throw std::runtime_error("check failed :(");
-            }
-            now = now->next;
-        }
-    }
-
     iterator begin() {
         return iterator(root_.next);
     }
