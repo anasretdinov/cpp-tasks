@@ -71,7 +71,8 @@ public:
     // StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
 
     T* allocate(size_t n) {
-        typename StackStorage<N>::mem_type* raw_memory = storage_->get_memory(n * kSize, kAlignment);
+        typename StackStorage<N>::mem_type* raw_memory = 
+            storage_->get_memory(n * kSize, kAlignment);
         return reinterpret_cast<T*>(raw_memory);
     }
 
@@ -204,8 +205,8 @@ private:
     size_t size_ = 0;
 
     struct BaseNode {
-        BaseNode *prev = nullptr;
-        BaseNode *next = nullptr;
+        BaseNode* prev = nullptr;
+        BaseNode* next = nullptr;
         BaseNode()
             : prev(this),
               next(this) {
@@ -433,14 +434,6 @@ public:
     template <typename... Args>
     void emplace_back(const Args&... args) {
         emplace_target(end(), args...);
-        // ListNode* place = node_alloc_traits::allocate(allocator, 1);
-        // size_++;
-        // try {
-        //     node_alloc_traits::construct(allocator, place, root_.prev, &root_, args...);
-        // } catch (...) {
-        //     node_alloc_traits::deallocate(allocator, place, 1);
-        //     throw;
-        // }
     }
 
     void pop_back() {
@@ -473,20 +466,6 @@ public:
     }
 
     iterator insert(const_iterator pos, const T& value) {
-
         return emplace_target(convert(pos), value);
-
-        // BaseNode* after_new = const_cast<BaseNode*>(pos.node_);
-        // BaseNode* before_new = after_new->prev;
-        // ListNode* new_element = node_alloc_traits::allocate(allocator, 1);
-        // try {
-        //     node_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
-        // } catch (...) {
-        //     node_alloc_traits::deallocate(allocator, new_element, 1);
-        //     throw;
-        // }
-
-        // size_++;
-        // return iterator(new_element);
     }
 };
