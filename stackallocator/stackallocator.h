@@ -167,7 +167,7 @@ public:
             node_ = node_->prev;
             return copy;
         }
-
+    private:
         BaseIterator next() const {
             return iterator(node_->next);
         }
@@ -176,7 +176,6 @@ public:
             return iterator(node_->prev);
         }
 
-    private:
         using node_type = typename std::conditional_t<is_const, const BaseNode*, BaseNode*>;
         using node_dereferencable_type =
             typename std::conditional_t<is_const, const ListNode*, ListNode*>;
@@ -202,7 +201,8 @@ private:
     size_t size_ = 0;
 
     struct BaseNode {
-        BaseNode *prev = nullptr, *next = nullptr;
+        BaseNode *prev = nullptr;
+        BaseNode *next = nullptr;
         BaseNode()
             : prev(this),
               next(this) {
