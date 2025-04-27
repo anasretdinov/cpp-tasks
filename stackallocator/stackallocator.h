@@ -107,7 +107,6 @@ public:
 private:
     struct BaseNode;
     struct ListNode;
-
 public:
     friend struct BaseNode;
     friend struct ListNode;
@@ -196,6 +195,10 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
+    iterator convert(const_iterator val) {
+        return iterator(const_cast<iterator::node_type>(val.node_));
+    }
+
     BaseNode root_;
 
     size_t size_ = 0;
@@ -310,11 +313,6 @@ private:
             *it = *other_it;
         }
 
-        while (it != end()) {
-            ++it;
-            ++other_it;
-        }
-
         while (other_it != other.cend()) {
             push_back(*other_it);
             other_it++;
@@ -419,15 +417,30 @@ public:
     }
 
     template <typename... Args>
-    void emplace_back(const Args&... args) {
+    iterator emplace_target(iterator pos, const Args&... args) {
         ListNode* place = node_alloc_traits::allocate(allocator, 1);
         size_++;
         try {
-            node_alloc_traits::construct(allocator, place, root_.prev, &root_, args...);
+            node_alloc_traits::construct(allocator, place, (pos.node_->prev), pos.node_, args...);
         } catch (...) {
             node_alloc_traits::deallocate(allocator, place, 1);
             throw;
         }
+        return iterator(place);
+    }
+
+
+    template <typename... Args>
+    void emplace_back(const Args&... args) {
+        emplace_target(end(), args...);
+        // ListNode* place = node_alloc_traits::allocate(allocator, 1);
+        // size_++;
+        // try {
+        //     node_alloc_traits::construct(allocator, place, root_.prev, &root_, args...);
+        // } catch (...) {
+        //     node_alloc_traits::deallocate(allocator, place, 1);
+        //     throw;
+        // }
     }
 
     void pop_back() {
@@ -460,17 +473,20 @@ public:
     }
 
     iterator insert(const_iterator pos, const T& value) {
-        BaseNode* after_new = const_cast<BaseNode*>(pos.node_);
-        BaseNode* before_new = after_new->prev;
-        ListNode* new_element = node_alloc_traits::allocate(allocator, 1);
-        try {
-            node_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
-        } catch (...) {
-            node_alloc_traits::deallocate(allocator, new_element, 1);
-            throw;
-        }
 
-        size_++;
-        return iterator(new_element);
+        return emplace_target(convert(pos), value);
+
+        // BaseNode* after_new = const_cast<BaseNode*>(pos.node_);
+        // BaseNode* before_new = after_new->prev;
+        // ListNode* new_element = node_alloc_traits::allocate(allocator, 1);
+        // try {
+        //     node_alloc_traits::construct(allocator, new_element, before_new, after_new, value);
+        // } catch (...) {
+        //     node_alloc_traits::deallocate(allocator, new_element, 1);
+        //     throw;
+        // }
+
+        // size_++;
+        // return iterator(new_element);
     }
 };
