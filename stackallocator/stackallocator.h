@@ -71,7 +71,7 @@ public:
     // StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
 
     T* allocate(size_t n) {
-        typename StackStorage<N>::mem_type* raw_memory = 
+        typename StackStorage<N>::mem_type* raw_memory =
             storage_->get_memory(n * kSize, kAlignment);
         return reinterpret_cast<T*>(raw_memory);
     }
