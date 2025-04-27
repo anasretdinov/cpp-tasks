@@ -14,9 +14,9 @@ class WeakPtr;
 struct BaseControlBlock {
     size_t spcount = 0, weakcount = 0;
 
-    virtual void delete_inside(){};
+    virtual void delete_inside() = 0;
 
-    virtual void destroy(){};
+    virtual void destroy() = 0;
 
     BaseControlBlock()
         : spcount(0),
@@ -83,8 +83,8 @@ struct FatControlBlock : BaseControlBlock {
     union DataHolder {
         U val;
 
-        DataHolder(){};
-        ~DataHolder(){};
+        DataHolder() {};
+        ~DataHolder() {};
 
         void destroy_inside() {
             val.~U();
@@ -181,9 +181,9 @@ public:
     template <typename Y>
     SharedPtr(Y* ptr)
         : cblock_(custom_construct_weak(static_cast<T*>(ptr), std::default_delete<T>(),
-                                       std::allocator<T>())),
+                                        std::allocator<T>())),
           ptr_(static_cast<T*>(ptr)) {
-         cblock_->spcount++;
+        cblock_->spcount++;
         if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
             static_cast<EnableSharedFromThis<T>*>(ptr)->info_ = *this;
         }
@@ -213,14 +213,14 @@ public:
     SharedPtr(const SharedPtr<Y>& other)
         : cblock_(other.cblock_),
           ptr_(other.ptr_) {
-         cblock_->spcount++;
+        cblock_->spcount++;
     }
 
     SharedPtr(const SharedPtr& other)
         : cblock_(other.cblock_),
           ptr_(other.ptr_) {
         if (cblock_) {
-             cblock_->spcount++;
+            cblock_->spcount++;
         }
     }
 
@@ -230,7 +230,7 @@ public:
         : cblock_(other.cblock_),
           ptr_(ptr) {
         if (cblock_) {
-             cblock_->spcount++;
+            cblock_->spcount++;
         }
     }
 
@@ -252,7 +252,7 @@ public:
         cblock_ = other.cblock_;
         ptr_ = other.ptr_;
         if (cblock_) {
-             cblock_->spcount++;
+            cblock_->spcount++;
         }
         return *this;
     }
@@ -283,7 +283,7 @@ public:
         cblock_ = other.cblock_;
         ptr_ = other.ptr_;
         if (cblock_) {
-             cblock_->spcount++;
+            cblock_->spcount++;
         }
         return *this;
     }
@@ -298,7 +298,7 @@ public:
     }
 
     long use_count() const {
-        return  cblock_->spcount;
+        return cblock_->spcount;
     }
 
     T& operator*() {
@@ -327,7 +327,7 @@ public:
         delete_helper();
         ptr_ = static_cast<T*>(new_obj);
         cblock_ = custom_construct_weak(ptr_, std::default_delete<T>(), std::allocator<T>());
-         cblock_->spcount++;
+        cblock_->spcount++;
     }
 
     template <typename Y, typename Deleter>
@@ -335,7 +335,7 @@ public:
         delete_helper();
         ptr_ = static_cast<T*>(new_obj);
         cblock_ = custom_construct_weak(ptr_, d, std::allocator<T>());
-         cblock_->spcount++;
+        cblock_->spcount++;
     }
 
     template <typename Y, typename Deleter, typename Allocator>
@@ -343,7 +343,7 @@ public:
         delete_helper();
         ptr_ = static_cast<T*>(new_obj);
         cblock_ = custom_construct_weak(ptr_, d, a);
-         cblock_->spcount++;
+        cblock_->spcount++;
     }
 
     void reset() {
@@ -370,7 +370,7 @@ SharedPtr<T> allocateShared(Allocator allocator, Args&&... args) {
     to_return.cblock_ = mem;
     good_alloc_traits::construct(ppt, mem, allocator, std::forward<Args>(args)...);
     to_return.ptr_ = &(dynamic_cast<FatControlBlock<T, Allocator>*>(to_return.cblock_)->obj.val);
-    to_return. cblock_->spcount++;
+    to_return.cblock_->spcount++;
 
     if constexpr (std::is_base_of<EnableSharedFromThis<T>, T>::value) {
         static_cast<EnableSharedFromThis<T>*>(to_return.ptr_)->info_ = to_return;
@@ -502,7 +502,7 @@ public:
         if (!expired()) {
             to_return.cblock_ = cblock_;
             to_return.ptr_ = ptr_;
-            to_return. cblock_->spcount++;
+            to_return.cblock_->spcount++;
         }
         return to_return;
     }
