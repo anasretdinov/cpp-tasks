@@ -55,3 +55,4 @@ CppProperties.json
 .mypy_cache/
 stackallocator/insights_out.cpp
 multiplication/dumb.cpp
+warnings.txt
