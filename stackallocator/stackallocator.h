@@ -240,11 +240,7 @@ private:
         // Удаляет все, если все указатели правильны
         // И спасает от копипасты
         while (root_.next != &root_) {
-            ListNode* to_kill = static_cast<ListNode*>(root_.next);
-            root_.next = to_kill->next;
-            root_.next->prev = &root_;
-            node_alloc_traits::destroy(allocator, to_kill);
-            node_alloc_traits::deallocate(allocator, to_kill, 1);
+            pop_back();
         }
     }
 
