@@ -71,7 +71,7 @@ public:
     // StackAllocator& operator=(const StackAllocator& alloc) noexcept = default;
 
     T* allocate(size_t n) {
-        storage_::mem_type* raw_memory = storage_->get_memory(n * kSize, kAlignment);
+        typename StackStorage<N>::mem_type* raw_memory = storage_->get_memory(n * kSize, kAlignment);
         return reinterpret_cast<T*>(raw_memory);
     }
 
@@ -144,9 +144,7 @@ public:
             return &(this->operator*());
         }
 
-        bool operator==(const BaseIterator& it) const {
-            return (node_ == it.node_);
-        }
+        bool operator==(const BaseIterator& it) const = default;
 
         BaseIterator& operator++() {
             node_ = node_->next;
