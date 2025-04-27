@@ -304,11 +304,13 @@ private:
             pop_back();
         }
 
-        iterator it = begin();
         const_iterator other_it = other.cbegin();
 
-        while (it != end()) {
+        for (iterator it = begin(); it != end(); ++it, ++other_it) {
             *it = *other_it;
+        }
+
+        while (it != end()) {
             ++it;
             ++other_it;
         }
