@@ -117,7 +117,7 @@ TEST_CASE("CopyMoveConstructorsAssignments") {
     {
         auto vvv = std::move(v);
 
-        REQUIRE(get<std::string>(v).size() == 0);
+        REQUIRE(get<std::string>(v).empty());
         v.emplace<std::vector<int>>({1, 2, 3});
 
         REQUIRE(get<std::string>(vv).size() == 8);
@@ -126,7 +126,7 @@ TEST_CASE("CopyMoveConstructorsAssignments") {
     v = std::move(vv);
     REQUIRE(get<std::string>(v).size() == 8);
 
-    REQUIRE(get<std::string>(vv).size() == 0);
+    REQUIRE(get<std::string>(vv).empty());
 
     vv = 'a';
 
@@ -279,7 +279,7 @@ TEST_CASE("VisitOrGetRvalue") {
     auto& var_string = vec[0];
     auto new_string = get<std::string>(std::move(var_string));
 
-    REQUIRE(get<std::string>(var_string).size() == 0);
+    REQUIRE(get<std::string>(var_string).empty());
     REQUIRE(new_string.size() == 3);
 
     new_string.clear();
@@ -287,7 +287,7 @@ TEST_CASE("VisitOrGetRvalue") {
 
     new_string = get<1>(std::move(var_string));
 
-    REQUIRE(get<1>(var_string).size() == 0);
+    REQUIRE(get<1>(var_string).empty());
     REQUIRE(new_string.size() == 3);
 }
 
