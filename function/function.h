@@ -1,7 +1,6 @@
 #include <algorithm>  // std::swap_ranges
 #include <functional>
 #include <iostream>
-#define private public
 template <typename, bool Copyable>
 class GenericFunction;
 
