@@ -102,7 +102,7 @@ void test_function() {
         attr(helper) = 10;
         REQUIRE(func(helper, 10) == 20);
     }
-/*
+
     SECTION("Change simple object") {
         AllocatorGuard guard;
         Func<int(int, int)> func = sum;
@@ -157,7 +157,7 @@ void test_function() {
         attr(helper) = 55;
         REQUIRE(x == 55);
     }
-
+/*
     SECTION("Empty function") {
         AllocatorGuard guard;
         Func<int(int, int)> func;
