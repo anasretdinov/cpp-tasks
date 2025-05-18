@@ -208,7 +208,7 @@ void test_function() {
         Func<int()> func2 = std::move(func);
         REQUIRE(func2() == 10);
     }
-/*
+
     SECTION("Bind") {
         using std::placeholders::_1;
         using std::placeholders::_2;
@@ -218,7 +218,7 @@ void test_function() {
         Func<int(int, int)> func = std::bind(lambda, 2, _2, _1, 30);
         REQUIRE(func(20, 3) == 606);
     }
-
+/*
     struct TestStructConst {
         void const_method(int) const {
         }
