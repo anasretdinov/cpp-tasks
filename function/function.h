@@ -59,8 +59,8 @@ private:
     }
 
     template <typename F, bool TreatAsObject>
-    static void* copier(void* func, char* target_buffer) 
-        requires Copyable 
+    static void* copier(void* func, char* target_buffer)
+        requires Copyable
     {
 
         if constexpr (TreatAsObject) {
@@ -101,7 +101,7 @@ public:
                  !std::is_function_v<std::remove_cvref_t<F>> && std::invocable<F, Args...>)
     GenericFunction(F&& func)
         : vt_(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
-             reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>), nullptr) {
+              reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>), nullptr) {
         if constexpr (Copyable) {
             vt_.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>);
         }
@@ -116,8 +116,8 @@ public:
 
     // this is for functions
     template <typename F>
-    requires(std::is_function_v<std::remove_cvref_t<F>>&& std::invocable<F, Args...>)
-        GenericFunction(F* func)
+        requires(std::is_function_v<std::remove_cvref_t<F>>&& std::invocable<F, Args...>)
+    GenericFunction(F* func)
         : fptr_(reinterpret_cast<void*>(func)),
           vt_(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
              nullptr,  // nothing to destroy
@@ -127,7 +127,7 @@ public:
         }
     }
 
-    GenericFunction(const GenericFunction& f) 
+    GenericFunction(const GenericFunction& f)
         requires Copyable
         : fptr_(f.vt_.copy_ptr(f.fptr_, small_buffer_)),
           vt_(f.vt_) {
@@ -138,8 +138,8 @@ public:
         *this = std::forward<GenericFunction&&>(f);
     }
 
-    GenericFunction& operator=(const GenericFunction& f) 
-        requires Copyable 
+    GenericFunction& operator=(const GenericFunction& f)
+        requires Copyable
     {
         if (this == &f) {
             return *this;
