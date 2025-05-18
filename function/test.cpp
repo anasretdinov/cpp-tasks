@@ -240,7 +240,7 @@ void test_function() {
                                        Func<void(const TestStructConst&, int)>>);
     static_assert(!std::is_assignable_v<Func<void(const TestStructConst&, int)>,
                                         Func<void(TestStructConst&, int)>>);
-/*
+
     struct TestStructRvalue {
         void usual_method(int) {
         }
@@ -260,7 +260,7 @@ void test_function() {
                                            decltype(&TestStructRvalue::lvalue_method)>);
     static_assert(std::is_constructible_v<Func<void(TestStructRvalue&&, int)>,
                                           decltype(&TestStructRvalue::const_lvalue_method)>);
-
+/*
     static_assert(
         !std::is_invocable_v<Func<void(TestStructRvalue&&, int)>, TestStructRvalue&, int>);
     static_assert(
