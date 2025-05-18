@@ -21,11 +21,31 @@ private:
 
     /// TODO: structure for pseudo vtable
 
-    invoke_ptr_t invoke_ptr;
-    destroy_ptr_t destroy_ptr;
-    copy_ptr_t copy_ptr;
+    struct custom_vtable {
+        invoke_ptr_t invoke_ptr;
+        destroy_ptr_t destroy_ptr;
+        copy_ptr_t copy_ptr;
 
+        custom_vtable() 
+            : invoke_ptr(nullptr)
+            , destroy_ptr(nullptr)
+            , copy_ptr(nullptr) 
+        {}
 
+        custom_vtable(invoke_ptr_t invoke_ptr, destroy_ptr_t destroy_ptr, copy_ptr_t copy_ptr) 
+            : invoke_ptr(invoke_ptr)
+            , destroy_ptr(destroy_ptr)
+            , copy_ptr(copy_ptr) 
+        {}
+
+        void clear() {
+            invoke_ptr = nullptr;
+            destroy_ptr = nullptr;
+            copy_ptr = nullptr;
+        }
+    };
+
+    custom_vtable vt;
 
 private:
     template <typename F>
@@ -58,13 +78,11 @@ private:
     }
 
     void destroy_helper() {
-        if (destroy_ptr) {
-            destroy_ptr(fptr);
+        if (vt.destroy_ptr) {
+            vt.destroy_ptr(fptr);
         }
         fptr = nullptr;
-        invoke_ptr = nullptr;
-        destroy_ptr = nullptr;
-        copy_ptr = nullptr;
+        vt.clear();
     }
 
     bool is_small() const {
@@ -75,9 +93,7 @@ public:
 
     // empty constructor
     Function() 
-        : invoke_ptr(nullptr)
-        , destroy_ptr(nullptr) 
-        , copy_ptr(&copier<void, false>)
+        : vt(nullptr, nullptr, &copier<void, false>)
     {
 
     }
@@ -89,9 +105,11 @@ public:
         !std::is_same_v<std::remove_cvref_t<F>, Function<Ret(Args...)>>
      && !std::is_function_v<std::remove_cvref_t<F>>)
     Function(F&& func) 
-        : invoke_ptr(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>))
-        , destroy_ptr(reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>))
-        , copy_ptr(reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>))
+        : vt(
+            reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
+            reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>),
+            reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>)
+        )
     {
         using TrueType = std::remove_cvref_t<F>;
         if constexpr (sizeof(TrueType) > BUFFER_SIZE) {
@@ -109,9 +127,11 @@ public:
     )
     Function(F* func)
         : fptr(reinterpret_cast<void*>(func))
-        , invoke_ptr(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>))
-        , destroy_ptr(nullptr) // nothing to destroy 
-        , copy_ptr(reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>))
+        , vt(
+            reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
+            nullptr, // nothing to destroy
+            reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>)
+        )
     {
 
     }
@@ -122,11 +142,10 @@ public:
         } 
         destroy_helper();
         
-        fptr = f.copy_ptr(f.fptr, small_buffer);
+        fptr = f.vt.copy_ptr(f.fptr, small_buffer);
 
-        invoke_ptr = f.invoke_ptr;
-        destroy_ptr = f.destroy_ptr;
-        copy_ptr = f.copy_ptr;
+        vt = f.vt;
+
         return *this;
     }
 
@@ -135,9 +154,9 @@ public:
             return *this;
         }
         destroy_helper();
-        std::swap(invoke_ptr, f.invoke_ptr);
-        std::swap(destroy_ptr, f.destroy_ptr);
-        std::swap(copy_ptr, f.copy_ptr);
+        
+        std::swap(vt, f.vt);
+
         // then need to do something with buffer 
         std::swap_ranges(small_buffer, small_buffer + BUFFER_SIZE, f.small_buffer);
 
@@ -151,10 +170,10 @@ public:
 
 
     Ret operator()(Args... args) const {
-        if (!invoke_ptr) {
+        if (!vt.invoke_ptr) {
             throw std::bad_function_call();
         }
-        return invoke_ptr(fptr, std::forward<Args>(args)...);
+        return vt.invoke_ptr(fptr, std::forward<Args>(args)...);
     }
 
     ~Function() {
