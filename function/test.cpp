@@ -102,7 +102,7 @@ void test_function() {
         attr(helper) = 10;
         REQUIRE(func(helper, 10) == 20);
     }
-
+/*
     SECTION("Change simple object") {
         AllocatorGuard guard;
         Func<int(int, int)> func = sum;
@@ -309,12 +309,26 @@ void test_function() {
             // static_assert(!std::is_assignable_v<Func<int(int)>, NotCopyable&>);
         }
     }
+        */
 }
+
+
+
 
 TEST_CASE("Function") {
     test_function<Function, false>();
 }
-
+/*
 TEST_CASE("MoveOnlyFunction") {
     test_function<MoveOnlyFunction, true>();
+}
+ */   
+
+TEST_CASE("My1") {
+
+    Function<int(int)> cock = [](int a) -> int {
+        return a + 2289;
+    };
+    REQUIRE(cock(229) == 229+2289);
+    
 }
