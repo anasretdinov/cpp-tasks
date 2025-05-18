@@ -63,7 +63,9 @@ private:
     }
 
     template <typename F, bool TreatAsObject>
-    static void* copier(F* func, char* target_buffer) {
+    static void* copier(F* func, char* target_buffer)
+    requires Copyable
+    {
 
         if constexpr (TreatAsObject) {
             if constexpr(sizeof(F) > BUFFER_SIZE) {
@@ -94,7 +96,7 @@ public:
     // empty constructor
     GenericFunction() 
         : fptr(nullptr)
-        , vt(nullptr, nullptr, &copier<void, false>)
+        , vt(nullptr, nullptr, nullptr)
     {
 
     }
@@ -110,9 +112,12 @@ public:
         : vt(
             reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
             reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>),
-            reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>)
+            nullptr
         )
     {
+        if constexpr (Copyable) {
+            vt.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>);
+        }
         using TrueType = std::remove_cvref_t<F>;
         if constexpr (sizeof(TrueType) > BUFFER_SIZE) {
             fptr = new F(std::forward<F>(func));
@@ -133,10 +138,12 @@ public:
         , vt(
             reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
             nullptr, // nothing to destroy
-            reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>)
+            nullptr
         )
     {
-
+        if constexpr (Copyable) {
+            vt.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>);
+        }
     }
 
 

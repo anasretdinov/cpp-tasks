@@ -318,11 +318,11 @@ void test_function() {
 TEST_CASE("Function") {
     test_function<Function, false>();
 }
-/*
+
 TEST_CASE("MoveOnlyFunction") {
     test_function<MoveOnlyFunction, true>();
 }
- */   
+
 
 TEST_CASE("My1") {
 }
