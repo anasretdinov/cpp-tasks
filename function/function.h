@@ -7,11 +7,11 @@ class GenericFunction;
 template <typename Ret, typename... Args, bool Copyable>
 class GenericFunction<Ret(Args...), Copyable> {
 private:
-    static const size_t BUFFER_SIZE = 16;
+    static const size_t kBufferSize = 16;
 
-    void* fptr;
+    void* fptr_;
 
-    char small_buffer[BUFFER_SIZE];
+    char small_buffer_[kBufferSize];
 
     using invoke_ptr_t = Ret (*)(void*, Args...);
     using destroy_ptr_t = void (*)(void*);
@@ -41,7 +41,7 @@ private:
         }
     };
 
-    custom_vtable vt;
+    custom_vtable vt_;
 
 private:
     template <typename F>
@@ -51,7 +51,7 @@ private:
 
     template <typename F>
     static void destroyer(void* func) {
-        if constexpr (sizeof(F) > BUFFER_SIZE) {
+        if constexpr (sizeof(F) > kBufferSize) {
             delete reinterpret_cast<F*>(func);
         } else {
             reinterpret_cast<F*>(func)->~F();
@@ -59,10 +59,12 @@ private:
     }
 
     template <typename F, bool TreatAsObject>
-    static void* copier(void* func, char* target_buffer) requires Copyable {
+    static void* copier(void* func, char* target_buffer) 
+        requires Copyable 
+    {
 
         if constexpr (TreatAsObject) {
-            if constexpr (sizeof(F) > BUFFER_SIZE) {
+            if constexpr (sizeof(F) > kBufferSize) {
                 return new F(*reinterpret_cast<F*>(func));
             } else {
                 new (target_buffer) F(*reinterpret_cast<F*>(func));
@@ -74,41 +76,41 @@ private:
     }
 
     void destroy_helper() {
-        if (vt.destroy_ptr) {
-            vt.destroy_ptr(fptr);
+        if (vt_.destroy_ptr) {
+            vt_.destroy_ptr(fptr_);
         }
-        fptr = nullptr;
-        vt.clear();
+        fptr_ = nullptr;
+        vt_.clear();
     }
 
     bool is_small() const {
-        return fptr == small_buffer;
+        return fptr_ == small_buffer_;
     }
 
 public:
     // empty constructor
     GenericFunction()
-        : fptr(nullptr),
-          vt(nullptr, nullptr, nullptr) {
+        : fptr_(nullptr),
+          vt_(nullptr, nullptr, nullptr) {
     }
 
     // i can't call sizeof from c-style func
     // so i write requires
     template <typename F>
-    requires(!std::is_same_v<std::remove_cvref_t<F>, GenericFunction> &&
-             !std::is_function_v<std::remove_cvref_t<F>> && std::invocable<F, Args...>)
-        GenericFunction(F&& func)
-        : vt(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
+        requires(!std::is_same_v<std::remove_cvref_t<F>, GenericFunction> &&
+                 !std::is_function_v<std::remove_cvref_t<F>> && std::invocable<F, Args...>)
+    GenericFunction(F&& func)
+        : vt_(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
              reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>), nullptr) {
         if constexpr (Copyable) {
-            vt.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>);
+            vt_.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, true>);
         }
         using TrueType = std::remove_cvref_t<F>;
-        if constexpr (sizeof(TrueType) > BUFFER_SIZE) {
-            fptr = new F(std::forward<F>(func));
+        if constexpr (sizeof(TrueType) > kBufferSize) {
+            fptr_ = new F(std::forward<F>(func));
         } else {
-            new (small_buffer) TrueType(std::forward<F>(func));
-            fptr = small_buffer;
+            new (small_buffer_) TrueType(std::forward<F>(func));
+            fptr_ = small_buffer_;
         }
     }
 
@@ -116,18 +118,19 @@ public:
     template <typename F>
     requires(std::is_function_v<std::remove_cvref_t<F>>&& std::invocable<F, Args...>)
         GenericFunction(F* func)
-        : fptr(reinterpret_cast<void*>(func)),
-          vt(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
+        : fptr_(reinterpret_cast<void*>(func)),
+          vt_(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
              nullptr,  // nothing to destroy
              nullptr) {
         if constexpr (Copyable) {
-            vt.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>);
+            vt_.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>);
         }
     }
 
-    GenericFunction(const GenericFunction& f) requires Copyable
-        : fptr(f.vt.copy_ptr(f.fptr, small_buffer)),
-          vt(f.vt) {
+    GenericFunction(const GenericFunction& f) 
+        requires Copyable
+        : fptr_(f.vt_.copy_ptr(f.fptr_, small_buffer_)),
+          vt_(f.vt_) {
     }
 
     GenericFunction(GenericFunction&& f)
@@ -135,15 +138,17 @@ public:
         *this = std::forward<GenericFunction&&>(f);
     }
 
-    GenericFunction& operator=(const GenericFunction& f) requires Copyable {
+    GenericFunction& operator=(const GenericFunction& f) 
+        requires Copyable 
+    {
         if (this == &f) {
             return *this;
         }
         destroy_helper();
 
-        fptr = f.vt.copy_ptr(f.fptr, small_buffer);
+        fptr_ = f.vt_.copy_ptr(f.fptr_, small_buffer_);
 
-        vt = f.vt;
+        vt_ = f.vt_;
 
         return *this;
     }
@@ -154,17 +159,17 @@ public:
         }
         destroy_helper();
 
-        std::swap(vt, f.vt);
+        std::swap(vt_, f.vt_);
 
         // then need to do something with buffer
-        std::swap_ranges(small_buffer, small_buffer + BUFFER_SIZE, f.small_buffer);
+        std::swap_ranges(small_buffer_, small_buffer_ + kBufferSize, f.small_buffer_);
 
         if (f.is_small()) {
-            fptr = small_buffer;
+            fptr_ = small_buffer_;
         } else {
-            std::swap(fptr, f.fptr);
+            std::swap(fptr_, f.fptr_);
         }
-        f.fptr = nullptr;
+        f.fptr_ = nullptr;
 
         return *this;
     }
@@ -178,10 +183,10 @@ public:
     }
 
     Ret operator()(Args... args) const {
-        if (!vt.invoke_ptr) {
+        if (!vt_.invoke_ptr) {
             throw std::bad_function_call();
         }
-        return vt.invoke_ptr(fptr, std::forward<Args>(args)...);
+        return vt_.invoke_ptr(fptr_, std::forward<Args>(args)...);
     }
 
     ~GenericFunction() {
@@ -189,7 +194,7 @@ public:
     }
 
     explicit operator bool() const {
-        return static_cast<bool>(fptr);
+        return static_cast<bool>(fptr_);
     }
 };
 
