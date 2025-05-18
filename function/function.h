@@ -104,7 +104,8 @@ public:
     template <typename F>
     requires (
         !std::is_same_v<std::remove_cvref_t<F>, Function<Ret(Args...)>>
-     && !std::is_function_v<std::remove_cvref_t<F>>)
+     && !std::is_function_v<std::remove_cvref_t<F>>
+     && std::invocable<F, Args...>)
     Function(F&& func) 
         : vt(
             reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
@@ -125,6 +126,7 @@ public:
     template <typename F>
     requires (
         std::is_function_v<std::remove_cvref_t<F>>
+     && std::invocable<F, Args...>
     )
     Function(F* func)
         : fptr(reinterpret_cast<void*>(func))

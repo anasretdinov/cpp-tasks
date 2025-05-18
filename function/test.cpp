@@ -218,7 +218,7 @@ void test_function() {
         Func<int(int, int)> func = std::bind(lambda, 2, _2, _1, 30);
         REQUIRE(func(20, 3) == 606);
     }
-/*
+
     struct TestStructConst {
         void const_method(int) const {
         }
@@ -240,7 +240,7 @@ void test_function() {
                                        Func<void(const TestStructConst&, int)>>);
     static_assert(!std::is_assignable_v<Func<void(const TestStructConst&, int)>,
                                         Func<void(TestStructConst&, int)>>);
-
+/*
     struct TestStructRvalue {
         void usual_method(int) {
         }
