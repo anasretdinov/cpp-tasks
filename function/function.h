@@ -2,11 +2,13 @@
 #include <algorithm> // std::swap_ranges
 #include <iostream>
 #define private public
-template <typename>
-class Function;
+template <typename, bool Copyable>
+class GenericFunction;
 
-template <typename Ret, typename... Args>
-class Function<Ret(Args...)> {
+
+
+template <typename Ret, typename... Args, bool Copyable>
+class GenericFunction<Ret(Args...), Copyable> {
 private:
     static const size_t BUFFER_SIZE = 16; 
 
@@ -18,8 +20,6 @@ private:
     using destroy_ptr_t = void(*)(void*);
     using copy_ptr_t = void*(*)(void*, char*);
 
-
-    /// TODO: structure for pseudo vtable
 
     struct custom_vtable {
         invoke_ptr_t invoke_ptr;
@@ -92,7 +92,7 @@ private:
 public:
 
     // empty constructor
-    Function() 
+    GenericFunction() 
         : fptr(nullptr)
         , vt(nullptr, nullptr, &copier<void, false>)
     {
@@ -103,10 +103,10 @@ public:
     // so i write requires
     template <typename F>
     requires (
-        !std::is_same_v<std::remove_cvref_t<F>, Function<Ret(Args...)>>
+        !std::is_same_v<std::remove_cvref_t<F>, GenericFunction>
      && !std::is_function_v<std::remove_cvref_t<F>>
      && std::invocable<F, Args...>)
-    Function(F&& func) 
+    GenericFunction(F&& func) 
         : vt(
             reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
             reinterpret_cast<destroy_ptr_t>(&destroyer<std::remove_cvref_t<F>>),
@@ -128,7 +128,7 @@ public:
         std::is_function_v<std::remove_cvref_t<F>>
      && std::invocable<F, Args...>
     )
-    Function(F* func)
+    GenericFunction(F* func)
         : fptr(reinterpret_cast<void*>(func))
         , vt(
             reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
@@ -139,18 +139,22 @@ public:
 
     }
 
-    Function(const Function& f)
+
+    GenericFunction(const GenericFunction& f)
+    requires Copyable
     : fptr(f.vt.copy_ptr(f.fptr, small_buffer))
     , vt(f.vt) {
 
     }
 
 
-    Function(Function&& f) : Function() {
-        *this = std::forward<Function&&>(f);
+    GenericFunction(GenericFunction&& f) : GenericFunction() {
+        *this = std::forward<GenericFunction&&>(f);
     }
 
-    Function& operator=(const Function& f) {
+    GenericFunction& operator=(const GenericFunction& f)
+    requires Copyable
+    {
         if (this == &f) {
             return *this;
         } 
@@ -163,7 +167,7 @@ public:
         return *this;
     }
 
-    Function& operator=(Function&& f) {
+    GenericFunction& operator=(GenericFunction&& f) {
         if (this == &f) {
             return *this;
         }
@@ -199,7 +203,7 @@ public:
         return vt.invoke_ptr(fptr, std::forward<Args>(args)...);
     }
 
-    ~Function() {
+    ~GenericFunction() {
         destroy_helper();
     }
 
@@ -208,6 +212,21 @@ public:
     } 
 
 };
+
+
+template <typename Stuff>
+struct Function : GenericFunction<Stuff, true> {
+    using GenericFunction<Stuff, true>::GenericFunction;
+};
+
+template <typename Stuff>
+struct MoveOnlyFunction : GenericFunction<Stuff, false> {
+    using GenericFunction<Stuff, false>::GenericFunction;
+};
+
+
+
+
 
 // standard functions 
 template <typename R, typename... Args>
@@ -226,8 +245,20 @@ template <typename F>
 Function(F) -> Function<typename function_traits<decltype(&F::operator())>::signature>;
 
 
-template <typename>
-class MoveOnlyFunction {
 
-    // YOUR CODE HERE
+
+// standard functions 
+template <typename R, typename... Args>
+MoveOnlyFunction(R(*)(Args...)) -> MoveOnlyFunction<R(Args...)>;
+
+// stuff for lambdas, class member functions
+template <typename>
+struct move_only_function_traits;
+
+template <typename R, typename C, typename... Args>
+struct move_only_function_traits<R(C::*)(Args...) const> {
+    using signature = R(Args...);
 };
+
+template <typename F>
+MoveOnlyFunction(F) -> MoveOnlyFunction<typename move_only_function_traits<decltype(&F::operator())>::signature>;
