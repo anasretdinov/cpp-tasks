@@ -45,31 +45,31 @@ private:
 
 private:
     template <typename F>
-    static Ret invoker(F* func, Args... args) {
-        return std::invoke(*func, std::forward<Args>(args)...);
+    static Ret invoker(void* func, Args... args) {
+        return std::invoke(*reinterpret_cast<F*>(func), std::forward<Args>(args)...);
     }
 
     template <typename F>
-    static void destroyer(F* func) {
+    static void destroyer(void* func) {
         if constexpr (sizeof(F) > BUFFER_SIZE) {
-            delete func;
+            delete reinterpret_cast<F*>(func);
         } else {
             reinterpret_cast<F*>(func)->~F();
         }
     }
 
     template <typename F, bool TreatAsObject>
-    static void* copier(F* func, char* target_buffer) requires Copyable {
+    static void* copier(void* func, char* target_buffer) requires Copyable {
 
         if constexpr (TreatAsObject) {
             if constexpr (sizeof(F) > BUFFER_SIZE) {
-                return new F(*func);
+                return new F(*reinterpret_cast<F*>(func));
             } else {
-                new (target_buffer) F(*func);
+                new (target_buffer) F(*reinterpret_cast<F*>(func));
                 return target_buffer;
             }
         } else {
-            return reinterpret_cast<void*>(func);
+            return func;
         }
     }
 
