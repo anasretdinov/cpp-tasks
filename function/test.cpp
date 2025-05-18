@@ -173,12 +173,12 @@ void test_function() {
         REQUIRE(func == nullptr);
         REQUIRE(!func);
     }
-/*
+
     SECTION("Invoke") {
         Func<int(int, int)> func = sum;
         REQUIRE(std::invoke(func, 5, 10) == 15);
     }
-
+/*
     SECTION("SmallObjectsOptimization") {
         AllocatorGuard guard;
         if constexpr (!IsMoveOnly) {
