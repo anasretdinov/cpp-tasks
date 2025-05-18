@@ -196,7 +196,7 @@ void test_function() {
             REQUIRE(func(5) == 120);
         }
     }
-/*
+
     SECTION("Call changes state") {
         std::vector<int> vec = {1, 2, 3};
         Func<int()> func = [&]() { return std::accumulate(vec.begin(), vec.end(), 0); };
@@ -208,7 +208,7 @@ void test_function() {
         Func<int()> func2 = std::move(func);
         REQUIRE(func2() == 10);
     }
-
+/*
     SECTION("Bind") {
         using std::placeholders::_1;
         using std::placeholders::_2;
