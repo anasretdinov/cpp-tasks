@@ -1,7 +1,7 @@
 #include <functional>
 #include <algorithm> // std::swap_ranges
-
-
+#include <iostream>
+#define private public
 template <typename>
 class Function;
 
@@ -29,7 +29,7 @@ private:
         custom_vtable() 
             : invoke_ptr(nullptr)
             , destroy_ptr(nullptr)
-            , copy_ptr(nullptr) 
+            , copy_ptr(nullptr)
         {}
 
         custom_vtable(invoke_ptr_t invoke_ptr, destroy_ptr_t destroy_ptr, copy_ptr_t copy_ptr) 
@@ -93,7 +93,8 @@ public:
 
     // empty constructor
     Function() 
-        : vt(nullptr, nullptr, &copier<void, false>)
+        : fptr(nullptr)
+        , vt(nullptr, nullptr, &copier<void, false>)
     {
 
     }
@@ -136,6 +137,17 @@ public:
 
     }
 
+    Function(const Function& f)
+    : fptr(f.vt.copy_ptr(f.fptr, small_buffer))
+    , vt(f.vt) {
+
+    }
+
+
+    Function(Function&& f) : Function() {
+        *this = std::forward<Function&&>(f);
+    }
+
     Function& operator=(const Function& f) {
         if (this == &f) {
             return *this;
@@ -165,9 +177,18 @@ public:
         } else {
             std::swap(fptr, f.fptr);
         }
+        f.fptr = nullptr;
+
         return *this;
     }   
 
+    bool operator ==(std::nullptr_t) const {
+        return !static_cast<bool>(*this);
+    }
+
+    bool operator !=(std::nullptr_t) const {
+        return static_cast<bool>(*this);
+    }
 
     Ret operator()(Args... args) const {
         if (!vt.invoke_ptr) {
@@ -180,7 +201,7 @@ public:
         destroy_helper();
     }
 
-    operator bool() const {
+    explicit operator bool() const {
         return static_cast<bool>(fptr);
     } 
 

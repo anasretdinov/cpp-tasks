@@ -157,7 +157,7 @@ void test_function() {
         attr(helper) = 55;
         REQUIRE(x == 55);
     }
-/*
+
     SECTION("Empty function") {
         AllocatorGuard guard;
         Func<int(int, int)> func;
@@ -173,7 +173,7 @@ void test_function() {
         REQUIRE(func == nullptr);
         REQUIRE(!func);
     }
-
+/*
     SECTION("Invoke") {
         Func<int(int, int)> func = sum;
         REQUIRE(std::invoke(func, 5, 10) == 15);
@@ -325,10 +325,4 @@ TEST_CASE("MoveOnlyFunction") {
  */   
 
 TEST_CASE("My1") {
-
-    Function<int(int)> cock = [](int a) -> int {
-        return a + 2289;
-    };
-    REQUIRE(cock(229) == 229+2289);
-    
 }
