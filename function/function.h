@@ -207,6 +207,23 @@ public:
 
 };
 
+// standard functions 
+template <typename R, typename... Args>
+Function(R(*)(Args...)) -> Function<R(Args...)>;
+
+// stuff for lambdas, class member functions
+template <typename>
+struct function_traits;
+
+template <typename R, typename C, typename... Args>
+struct function_traits<R(C::*)(Args...) const> {
+    using signature = R(Args...);
+};
+
+template <typename F>
+Function(F) -> Function<typename function_traits<decltype(&F::operator())>::signature>;
+
+
 template <typename>
 class MoveOnlyFunction {
 

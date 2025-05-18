@@ -178,7 +178,7 @@ void test_function() {
         Func<int(int, int)> func = sum;
         REQUIRE(std::invoke(func, 5, 10) == 15);
     }
-/*
+
     SECTION("SmallObjectsOptimization") {
         AllocatorGuard guard;
         if constexpr (!IsMoveOnly) {
@@ -196,7 +196,7 @@ void test_function() {
             REQUIRE(func(5) == 120);
         }
     }
-
+/*
     SECTION("Call changes state") {
         std::vector<int> vec = {1, 2, 3};
         Func<int()> func = [&]() { return std::accumulate(vec.begin(), vec.end(), 0); };
