@@ -116,12 +116,12 @@ public:
 
     // this is for functions
     template <typename F>
-        requires(std::is_function_v<std::remove_cvref_t<F>>&& std::invocable<F, Args...>)
+        requires(std::is_function_v<std::remove_cvref_t<F>> && std::invocable<F, Args...>)
     GenericFunction(F* func)
         : fptr_(reinterpret_cast<void*>(func)),
           vt_(reinterpret_cast<invoke_ptr_t>(&invoker<std::remove_cvref_t<F>>),
-             nullptr,  // nothing to destroy
-             nullptr) {
+              nullptr,  // nothing to destroy
+              nullptr) {
         if constexpr (Copyable) {
             vt_.copy_ptr = reinterpret_cast<copy_ptr_t>(&copier<std::remove_cvref_t<F>, false>);
         }
