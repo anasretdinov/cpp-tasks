@@ -1,7 +1,17 @@
 # Курс C++
 
-Это репозиторий второй части курса C++.
-Инструкции по настройке окружения описана в [setup.md](docs/setup.md).
-Структура семинарских задач приведена [в тестовой задаче](multiplication).
 
-Перемещаться по задачам и следить за дедлайнами можно тут: https://mipt-cpp.manytask.org/
+Это бекап сданных задач. После того, как сдам задачу, залью сюда. 
+
+
+Сданы: 
+
+- StackAllocator + List - функционал std::list
+- SharedPtr - функционал std::shared_ptr и его друзей (weak_ptr, make_shared, allocate_shared)
+- Function - урезанный функционал std::function
+
+В планах написать: 
+- Variant - функционал std::variant
+- Tuple
+- UnorderedMap
+
