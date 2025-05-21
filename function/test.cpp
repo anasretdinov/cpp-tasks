@@ -309,7 +309,11 @@ void test_function() {
             // static_assert(!std::is_assignable_v<Func<int(int)>, NotCopyable&>);
         }
     }
+        
 }
+
+
+
 
 TEST_CASE("Function") {
     test_function<Function, false>();
@@ -317,4 +321,8 @@ TEST_CASE("Function") {
 
 TEST_CASE("MoveOnlyFunction") {
     test_function<MoveOnlyFunction, true>();
+}
+
+
+TEST_CASE("My1") {
 }
