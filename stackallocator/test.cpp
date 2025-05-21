@@ -442,7 +442,37 @@ TEST_CASE("Modification") {
         CheckContent(list, {1, 2, 8, 4, 5});
     }
 
-    SECTION("By Mesyarik")
+    SECTION("Iterator increment/decrement") {
+        List<int> l;
+        l.push_back(3);
+        l.push_back(4);
+        l.push_back(7);
+
+        auto it = l.begin();
+        REQUIRE(it++ == l.begin());
+        REQUIRE(*it == 4);
+        REQUIRE(--it == l.begin());
+
+        it = l.end();
+        REQUIRE(it-- == l.end());
+        REQUIRE(*it == 7);
+        REQUIRE(++it == l.end());
+    }
+
+    SECTION("Erase and iterator change") {
+        List<int> l;
+        auto it = l.end();
+        for (size_t i = 0; i < 10; ++i) {
+            it = l.insert(it, i);
+        }
+        REQUIRE(*l.begin() == 9);
+        REQUIRE(*l.rbegin() == 0);
+
+        for (size_t i = 0; i < 10; ++i) {
+            l.erase(it++);
+        }
+        REQUIRE(l.empty());
+    }
 
     SECTION("Exceptions") {
         try {
@@ -594,7 +624,7 @@ TEST_CASE("Allocator") {
         REQUIRE(std::equal(small_list.rbegin(), small_list.rend(), IotaIterator<DataT>{0}));
 
         // no allocations for empty list
-        auto empty_list = List<DataT, Alloc>(Alloc(small_storage));
+        std::ignore = List<DataT, Alloc>(Alloc(small_storage));
         try {
             auto new_list = List<DataT, Alloc>(Alloc(small_storage));
             new_list.push_back({});
