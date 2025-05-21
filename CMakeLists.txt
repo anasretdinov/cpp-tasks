@@ -8,10 +8,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS  ON)
 
+include(tools/cmake/BuildFlags.cmake)
+
 find_package(Catch REQUIRED)
 
 include(tools/cmake/TestSolution.cmake)
-include(tools/cmake/BuildFlags.cmake)
 include_directories(tools/util)
 
 function(add_if_exists name)
@@ -27,3 +28,5 @@ add_if_exists(stackallocator)
 add_if_exists(unordered_map)
 add_if_exists(smart_pointers)
 add_if_exists(tuple)
+add_if_exists(function)
+add_if_exists(variant)
